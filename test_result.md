@@ -191,8 +191,7 @@ test_plan:
   current_focus:
     - "Mobile App Package Names Configuration"
     - "Mobile App Search Element Interaction"
-  stuck_tasks:
-    - "Mobile App Search Element Interaction"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
