@@ -189,4 +189,4 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "Fixed incorrect package names and improved search element interaction logic with better XPath selectors and proper element preparation (click, clear, send_keys). Ready for backend testing with focus on mobile automation functionality."
+    message: "CRITICAL FIX: Discovered the active server was using web scraping instead of mobile automation. Switched from server.py (web scraping) to server_github.py (mobile automation) which properly integrates with mobile_scraper.py. The mobile automation fixes are now active and ready for testing."
