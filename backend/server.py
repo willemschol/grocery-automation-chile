@@ -287,7 +287,13 @@ async def search_all_products(request: dict):
     
     try:
         # Get product list from database
-        product_list = db.product_lists.find_one({'_id': list_id})
+        from bson import ObjectId
+        try:
+            # Try to find by MongoDB ObjectId first
+            product_list = db.product_lists.find_one({'_id': ObjectId(list_id)})
+        except:
+            # If that fails, try to find by custom id field
+            product_list = db.product_lists.find_one({'id': list_id})
         if not product_list:
             raise HTTPException(status_code=404, detail="Product list not found")
         
