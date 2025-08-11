@@ -11,6 +11,9 @@ import os
 from pymongo import MongoClient
 import uuid
 
+# Set Playwright browsers path
+os.environ['PLAYWRIGHT_BROWSERS_PATH'] = '/pw-browsers'
+
 # Database setup
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/')
 client = MongoClient(mongo_url)
