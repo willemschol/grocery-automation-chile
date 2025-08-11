@@ -74,8 +74,9 @@ async def upload_csv(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="No valid products found in CSV")
         
         # Store in database
+        list_id = str(uuid.uuid4())
         result = db.product_lists.insert_one({
-            'id': str(uuid.uuid4()),
+            'id': list_id,
             'products': products,
             'created_at': pd.Timestamp.now().isoformat(),
             'status': 'uploaded'
@@ -84,7 +85,7 @@ async def upload_csv(file: UploadFile = File(...)):
         return {
             'message': f'Successfully uploaded {len(products)} products',
             'products': products,
-            'list_id': str(result.inserted_id)
+            'list_id': list_id
         }
         
     except HTTPException:
