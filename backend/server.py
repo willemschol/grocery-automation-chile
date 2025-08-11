@@ -173,15 +173,17 @@ class ProductSearcher:
             
             # Navigate to Lider
             await page.goto('https://www.lider.cl/')
-            await page.wait_for_timeout(2000)
+            await page.wait_for_timeout(3000)
             
-            # Search for product
-            search_box = await page.wait_for_selector('input[placeholder*="Buscar"], input[placeholder*="buscar"], .search-input', timeout=10000)
+            # Search for product using correct selector
+            search_box = await page.wait_for_selector('#search-input', timeout=15000)
             await search_box.fill(product_name)
+            
+            # Submit the form (search)
             await page.keyboard.press('Enter')
             
-            # Wait for results
-            await page.wait_for_timeout(3000)
+            # Wait for results page to load
+            await page.wait_for_timeout(4000)
             
             # Extract product information
             products = []
@@ -191,51 +193,84 @@ class ProductSearcher:
                     '.product-item',
                     '[data-testid*="product"]',
                     '.shelf-item',
-                    '.product-card'
+                    '.product-card',
+                    '.item',
+                    '[class*="product"]'
                 ]
                 
                 product_cards = []
                 for selector in product_selectors:
                     product_cards = await page.query_selector_all(selector)
                     if product_cards:
+                        print(f"Found {len(product_cards)} products using selector: {selector}")
                         break
                 
                 for card in product_cards[:10]:  # Limit to first 10 results
                     try:
                         # Get product name - try multiple selectors
                         name = "Unknown"
-                        name_selectors = ['.product-name', '.product-title', 'h3', 'h4', '.title']
+                        name_selectors = [
+                            '.product-name', 
+                            '.product-title', 
+                            'h3', 'h4', '.title',
+                            '[class*="name"]',
+                            '[class*="title"]',
+                            '.nombre'
+                        ]
+                        
                         for selector in name_selectors:
                             name_element = await card.query_selector(selector)
                             if name_element:
                                 name = await name_element.inner_text()
-                                break
+                                if name and name.strip():
+                                    break
                         
                         # Get price - try multiple selectors
                         price_text = "$0"
-                        price_selectors = ['.price', '.product-price', '.price-current', '[data-testid*="price"]']
+                        price_selectors = [
+                            '.price', 
+                            '.product-price', 
+                            '.price-current', 
+                            '[data-testid*="price"]',
+                            '[class*="price"]',
+                            '.precio'
+                        ]
+                        
                         for selector in price_selectors:
                             price_element = await card.query_selector(selector)
                             if price_element:
                                 price_text = await price_element.inner_text()
-                                break
+                                if price_text and price_text.strip():
+                                    break
                         
-                        # Extract numeric price
-                        price_match = re.search(r'[\$\d.,]+', price_text.replace('.', '').replace(',', '.'))
-                        price = float(price_match.group().replace('$', '').replace('.', '').replace(',', '.')) if price_match else 0
+                        # Extract numeric price (handle Chilean format)
+                        price = 0
+                        if price_text:
+                            # Remove common Chilean price formatting  
+                            clean_price = price_text.replace('$', '').replace('.', '').replace(',', '.').replace(' ', '')
+                            price_match = re.search(r'[\d,\.]+', clean_price)
+                            if price_match:
+                                try:
+                                    price = float(price_match.group().replace(',', ''))
+                                except:
+                                    price = 0
                         
                         # Get product URL
                         link_element = await card.query_selector('a')
                         product_url = await link_element.get_attribute('href') if link_element else ""
+                        if product_url and product_url.startswith('/'):
+                            product_url = f"https://www.lider.cl{product_url}"
                         
-                        products.append({
-                            'name': name.strip(),
-                            'price': price,
-                            'price_text': price_text,
-                            'url': f"https://www.lider.cl{product_url}" if product_url.startswith('/') else product_url,
-                            'store': 'Lider'
-                        })
+                        if name != "Unknown" and price > 0:
+                            products.append({
+                                'name': name.strip(),
+                                'price': price,
+                                'price_text': price_text,
+                                'url': product_url,
+                                'store': 'Lider'
+                            })
                     except Exception as e:
+                        print(f"Error extracting product from card: {e}")
                         continue
                         
             except Exception as e:
@@ -244,6 +279,7 @@ class ProductSearcher:
             await browser.close()
             await playwright.stop()
             
+            print(f"Lider search for '{product_name}' found {len(products)} products")
             return products
             
         except Exception as e:
