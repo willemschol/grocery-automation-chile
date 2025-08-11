@@ -16,7 +16,7 @@ class MobileAppScraper:
     def __init__(self):
         self.driver = None
         self.wait = None
-        self.appium_port = 4723
+        self.appium_port = 4724
         
     def setup_driver(self, app_package: str = None):
         """Initialize Appium driver for Android automation"""
