@@ -89,7 +89,7 @@ class MobileAppScraper:
         
         try:
             # Setup driver for Lider app
-            if not self.setup_driver("cl.lider.android"):  # Common package pattern
+            if not self.setup_driver("cl.walmart.liderapp"):  # Correct Lider package name
                 return []
             
             # Launch Lider app
