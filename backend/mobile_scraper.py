@@ -398,18 +398,23 @@ class MobileAppScraper:
                 "//*[contains(@resource-id,'search')]",
                 "//*[contains(@class,'search')]", 
                 "//*[contains(@content-desc,'search')]",
-                "//input[@type='search']",
+                "//*[contains(@content-desc,'Buscar')]",
+                "//android.widget.EditText[contains(@text,'Buscar')]",
+                "//android.widget.EditText[contains(@hint,'Buscar')]",
+                "//*[@class='android.widget.EditText']",
                 "//*[contains(@text,'Buscar')]"
             ]
             
             search_element = None
+            successful_selector = None
             for selector in search_selectors:
                 try:
                     search_element = self.wait.until(
                         EC.presence_of_element_located((AppiumBy.XPATH, selector))
                     )
                     if search_element.is_displayed():
-                        print(f"✅ Found search element with selector: {selector}")
+                        successful_selector = selector
+                        print(f"✅ Found Lider search element with selector: {selector}")
                         break
                 except:
                     continue
@@ -418,19 +423,37 @@ class MobileAppScraper:
                 print("❌ Could not find search element in Lider app")
                 return False
             
-            # Clear and enter search term
-            search_element.clear()
-            search_element.send_keys(product_name)
+            # Prepare the element for text input
+            try:
+                # First, click on the search element to focus it
+                search_element.click()
+                time.sleep(1)
+                print("✅ Search element clicked and focused")
+                
+                # Clear any existing text
+                search_element.clear()
+                time.sleep(1)
+                
+                # Send the search text
+                search_element.send_keys(product_name)
+                time.sleep(2)
+                print(f"✅ Text '{product_name}' entered successfully")
+                
+            except Exception as text_error:
+                print(f"❌ Error entering text: {text_error}")
+                return False
             
             # Submit search
             try:
                 self.driver.press_keycode(66)  # Android Enter key
                 time.sleep(3)
+                print("✅ Search submitted with Enter key")
             except:
                 # Try search button
                 search_button_selectors = [
                     "//*[contains(@resource-id,'search_button')]",
                     "//*[contains(@content-desc,'search')]",
+                    "//*[contains(@content-desc,'Buscar')]",
                     "//*[contains(@text,'Buscar')]"
                 ]
                 
@@ -438,12 +461,13 @@ class MobileAppScraper:
                     try:
                         search_btn = self.driver.find_element(AppiumBy.XPATH, selector)
                         search_btn.click()
+                        print(f"✅ Search submitted with button: {selector}")
                         break
                     except:
                         continue
             
             time.sleep(5)
-            print("✅ Lider search executed")
+            print("✅ Lider search executed successfully")
             return True
             
         except Exception as e:
