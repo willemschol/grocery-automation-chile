@@ -2,17 +2,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import asyncio
-import aiohttp
-from playwright.async_api import async_playwright
-import re
-import json
-from typing import List, Dict, Optional
+from typing import List, Dict
 import os
 from pymongo import MongoClient
 import uuid
-
-# Set Playwright browsers path
-os.environ['PLAYWRIGHT_BROWSERS_PATH'] = '/pw-browsers'
 
 # Database setup
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/')
@@ -30,264 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ProductSearcher:
-    def __init__(self):
-        self.session = None
-        
-    async def create_browser_session(self):
-        """Create a new browser session with anti-detection measures"""
-        playwright = await async_playwright().start()
-        browser = await playwright.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={'width': 1920, 'height': 1080}
-        )
-        page = await context.new_page()
-        return playwright, browser, context, page
-        
-    async def search_jumbo(self, product_name: str) -> List[Dict]:
-        """Search for products on jumbo.cl"""
-        try:
-            playwright, browser, context, page = await self.create_browser_session()
-            
-            # Navigate to Jumbo
-            await page.goto('https://www.jumbo.cl/')
-            await page.wait_for_timeout(3000)
-            
-            # Search for product using correct selector
-            search_box = await page.wait_for_selector('.search-box', timeout=15000)
-            await search_box.fill(product_name)
-            
-            # Click search button
-            search_btn = await page.wait_for_selector('.search-btn', timeout=10000)
-            await search_btn.click()
-            
-            # Wait for results page to load
-            await page.wait_for_timeout(4000)
-            
-            # Extract product information
-            products = []
-            try:
-                # Try multiple product card selectors for Jumbo
-                product_selectors = [
-                    '[data-testid="product-card"]',
-                    '.product-item',
-                    '.shelf-item', 
-                    '.product-card',
-                    '.item-product',
-                    '[class*="product"]'
-                ]
-                
-                product_cards = []
-                for selector in product_selectors:
-                    product_cards = await page.query_selector_all(selector)
-                    if product_cards:
-                        print(f"Found {len(product_cards)} products using selector: {selector}")
-                        break
-                
-                for card in product_cards[:10]:  # Limit to first 10 results
-                    try:
-                        # Get product name - try multiple selectors
-                        name = "Unknown"
-                        name_selectors = [
-                            '[data-testid="product-title"]',
-                            '.product-name', 
-                            '.product-title',
-                            'h3', 'h4', '.title',
-                            '[class*="name"]',
-                            '[class*="title"]'
-                        ]
-                        
-                        for selector in name_selectors:
-                            name_element = await card.query_selector(selector)
-                            if name_element:
-                                name = await name_element.inner_text()
-                                if name and name.strip():
-                                    break
-                        
-                        # Get price - try multiple selectors
-                        price_text = "$0"
-                        price_selectors = [
-                            '[data-testid="product-price"]',
-                            '.price', 
-                            '.product-price', 
-                            '.price-current',
-                            '[class*="price"]',
-                            '.precio'
-                        ]
-                        
-                        for selector in price_selectors:
-                            price_element = await card.query_selector(selector)
-                            if price_element:
-                                price_text = await price_element.inner_text()
-                                if price_text and price_text.strip():
-                                    break
-                        
-                        # Extract numeric price (handle Chilean format)
-                        price = 0
-                        if price_text:
-                            # Remove common Chilean price formatting
-                            clean_price = price_text.replace('$', '').replace('.', '').replace(',', '.').replace(' ', '')
-                            price_match = re.search(r'[\d,\.]+', clean_price)
-                            if price_match:
-                                try:
-                                    price = float(price_match.group().replace(',', ''))
-                                except:
-                                    price = 0
-                        
-                        # Get product URL
-                        link_element = await card.query_selector('a')
-                        product_url = await link_element.get_attribute('href') if link_element else ""
-                        if product_url and product_url.startswith('/'):
-                            product_url = f"https://www.jumbo.cl{product_url}"
-                        
-                        if name != "Unknown" and price > 0:
-                            products.append({
-                                'name': name.strip(),
-                                'price': price,
-                                'price_text': price_text,
-                                'url': product_url,
-                                'store': 'Jumbo'
-                            })
-                    except Exception as e:
-                        print(f"Error extracting product from card: {e}")
-                        continue
-                        
-            except Exception as e:
-                print(f"Error extracting Jumbo products: {e}")
-                
-            await browser.close()
-            await playwright.stop()
-            
-            print(f"Jumbo search for '{product_name}' found {len(products)} products")
-            return products
-            
-        except Exception as e:
-            print(f"Error searching Jumbo: {e}")
-            return []
-    
-    async def search_lider(self, product_name: str) -> List[Dict]:
-        """Search for products on lider.cl"""
-        try:
-            playwright, browser, context, page = await self.create_browser_session()
-            
-            # Navigate to Lider
-            await page.goto('https://www.lider.cl/')
-            await page.wait_for_timeout(3000)
-            
-            # Search for product using correct selector
-            search_box = await page.wait_for_selector('#search-input', timeout=15000)
-            await search_box.fill(product_name)
-            
-            # Submit the form (search)
-            await page.keyboard.press('Enter')
-            
-            # Wait for results page to load
-            await page.wait_for_timeout(4000)
-            
-            # Extract product information
-            products = []
-            try:
-                # Try different selectors for Lider product cards
-                product_selectors = [
-                    '.product-item',
-                    '[data-testid*="product"]',
-                    '.shelf-item',
-                    '.product-card',
-                    '.item',
-                    '[class*="product"]'
-                ]
-                
-                product_cards = []
-                for selector in product_selectors:
-                    product_cards = await page.query_selector_all(selector)
-                    if product_cards:
-                        print(f"Found {len(product_cards)} products using selector: {selector}")
-                        break
-                
-                for card in product_cards[:10]:  # Limit to first 10 results
-                    try:
-                        # Get product name - try multiple selectors
-                        name = "Unknown"
-                        name_selectors = [
-                            '.product-name', 
-                            '.product-title', 
-                            'h3', 'h4', '.title',
-                            '[class*="name"]',
-                            '[class*="title"]',
-                            '.nombre'
-                        ]
-                        
-                        for selector in name_selectors:
-                            name_element = await card.query_selector(selector)
-                            if name_element:
-                                name = await name_element.inner_text()
-                                if name and name.strip():
-                                    break
-                        
-                        # Get price - try multiple selectors
-                        price_text = "$0"
-                        price_selectors = [
-                            '.price', 
-                            '.product-price', 
-                            '.price-current', 
-                            '[data-testid*="price"]',
-                            '[class*="price"]',
-                            '.precio'
-                        ]
-                        
-                        for selector in price_selectors:
-                            price_element = await card.query_selector(selector)
-                            if price_element:
-                                price_text = await price_element.inner_text()
-                                if price_text and price_text.strip():
-                                    break
-                        
-                        # Extract numeric price (handle Chilean format)
-                        price = 0
-                        if price_text:
-                            # Remove common Chilean price formatting  
-                            clean_price = price_text.replace('$', '').replace('.', '').replace(',', '.').replace(' ', '')
-                            price_match = re.search(r'[\d,\.]+', clean_price)
-                            if price_match:
-                                try:
-                                    price = float(price_match.group().replace(',', ''))
-                                except:
-                                    price = 0
-                        
-                        # Get product URL
-                        link_element = await card.query_selector('a')
-                        product_url = await link_element.get_attribute('href') if link_element else ""
-                        if product_url and product_url.startswith('/'):
-                            product_url = f"https://www.lider.cl{product_url}"
-                        
-                        if name != "Unknown" and price > 0:
-                            products.append({
-                                'name': name.strip(),
-                                'price': price,
-                                'price_text': price_text,
-                                'url': product_url,
-                                'store': 'Lider'
-                            })
-                    except Exception as e:
-                        print(f"Error extracting product from card: {e}")
-                        continue
-                        
-            except Exception as e:
-                print(f"Error extracting Lider products: {e}")
-                
-            await browser.close()
-            await playwright.stop()
-            
-            print(f"Lider search for '{product_name}' found {len(products)} products")
-            return products
-            
-        except Exception as e:
-            print(f"Error searching Lider: {e}")
-            return []
-
-# Global searcher instance
-searcher = ProductSearcher()
+# Import mobile scraper (will be created separately)
+try:
+    from mobile_scraper import MobileAppScraper
+    mobile_searcher = MobileAppScraper()
+except ImportError:
+    mobile_searcher = None
+    print("Mobile scraper not available - install appium-python-client")
 
 @app.get("/api/health")
 async def health_check():
@@ -352,16 +94,19 @@ async def upload_csv(file: UploadFile = File(...)):
 
 @app.post("/api/search-product")
 async def search_product(request: dict):
-    """Search for a single product on both sites"""
+    """Search for a single product using mobile automation"""
     product_name = request.get('product_name', '')
     
     if not product_name:
         raise HTTPException(status_code=400, detail="Product name is required")
     
+    if not mobile_searcher:
+        raise HTTPException(status_code=500, detail="Mobile automation not available")
+    
     try:
-        # Search both sites concurrently
-        jumbo_task = searcher.search_jumbo(product_name)
-        lider_task = searcher.search_lider(product_name)
+        # Search both apps using mobile automation
+        jumbo_task = mobile_searcher.search_jumbo_app(product_name)
+        lider_task = mobile_searcher.search_lider_app(product_name)
         
         jumbo_results, lider_results = await asyncio.gather(jumbo_task, lider_task)
         
@@ -377,21 +122,18 @@ async def search_product(request: dict):
 
 @app.post("/api/search-all-products")
 async def search_all_products(request: dict):
-    """Search for all products from uploaded CSV"""
+    """Search for all products from uploaded CSV using mobile automation"""
     list_id = request.get('list_id', '')
     
     if not list_id:
         raise HTTPException(status_code=400, detail="List ID is required")
     
+    if not mobile_searcher:
+        raise HTTPException(status_code=500, detail="Mobile automation not available")
+    
     try:
         # Get product list from database
-        from bson import ObjectId
-        try:
-            # Try to find by MongoDB ObjectId first
-            product_list = db.product_lists.find_one({'_id': ObjectId(list_id)})
-        except:
-            # If that fails, try to find by custom id field
-            product_list = db.product_lists.find_one({'id': list_id})
+        product_list = db.product_lists.find_one({'_id': list_id})
         if not product_list:
             raise HTTPException(status_code=404, detail="Product list not found")
         
@@ -401,9 +143,9 @@ async def search_all_products(request: dict):
             product_name = product['name']
             
             try:
-                # Search both sites
-                jumbo_task = searcher.search_jumbo(product_name)
-                lider_task = searcher.search_lider(product_name)
+                # Search both apps
+                jumbo_task = mobile_searcher.search_jumbo_app(product_name)
+                lider_task = mobile_searcher.search_lider_app(product_name)
                 
                 jumbo_results, lider_results = await asyncio.gather(jumbo_task, lider_task)
                 
