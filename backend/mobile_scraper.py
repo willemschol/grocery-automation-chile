@@ -61,7 +61,7 @@ class MobileAppScraper:
         
         try:
             # Setup driver for Jumbo app
-            if not self.setup_driver("cl.jumbo.android"):  # Common package pattern
+            if not self.setup_driver("com.cencosud.cl.jumboahora"):  # Correct Jumbo package name
                 return []
             
             # Launch Jumbo app
