@@ -555,47 +555,144 @@ class MobileAppScraper:
     # ============================================================================
     
     async def _extract_jumbo_products(self) -> List[Dict]:
-        """Extract product information from Jumbo search results"""
+        """Extract Jumbo products with SAME CORRECTED logic as Lider"""
         products = []
         
         try:
-            print("📦 Extracting Jumbo products...")
+            print("📦 Starting CORRECTED Jumbo product extraction...")
             
             # Wait for results to load
             time.sleep(5)
             
-            # Look for any elements containing prices
+            # Get all text elements and group them by containers (SAME AS LIDER)
             all_text_elements = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.TextView")
-            print(f"📋 Found {len(all_text_elements)} TextView elements")
+            print(f"📋 Found {len(all_text_elements)} TextView elements for analysis")
             
-            price_elements = []
-            for element in all_text_elements:
+            # Debug: Print all text elements
+            print("📝 All text elements found:")
+            all_texts = []
+            for i, elem in enumerate(all_text_elements):
                 try:
-                    text = element.text.strip()
-                    if text and ('$' in text or 'peso' in text.lower()):
-                        price_elements.append(element)
-                        print(f"  💰 Found price text: '{text}'")
+                    text = elem.text.strip()
+                    if text:
+                        all_texts.append(text)
+                        print(f"  {i+1}. '{text}'")
                 except:
                     continue
             
-            print(f"Found {len(price_elements)} potential price elements")
+            # SAME AS LIDER: Build price containers by grouping related elements
+            price_containers = []
             
-            # Extract products from price elements
-            for i, price_elem in enumerate(price_elements[:10]):
+            # Strategy: Group elements by their Y-coordinate proximity
+            price_elements = []
+            
+            # First, find all price elements with their positions
+            for i, element in enumerate(all_text_elements):
                 try:
-                    price_text = price_elem.text.strip()
+                    text = element.text.strip()
+                    if text and ('$' in text or 'peso' in text.lower()):
+                        price_elements.append({
+                            'element': element,
+                            'text': text,
+                            'location': element.location,
+                            'index': i
+                        })
+                except:
+                    continue
+            
+            print(f"Found {len(price_elements)} price elements at positions:")
+            for pe in price_elements:
+                print(f"  '{pe['text']}' at Y={pe['location']['y']}")
+            
+            # For each price element, group nearby text elements
+            for price_info in price_elements:
+                price_y = price_info['location']['y']
+                price_text = price_info['text']
+                
+                # Collect texts that are near this price (within 200 pixels vertically)
+                related_texts = [price_text]  # Start with the price
+                
+                for j, text_elem in enumerate(all_text_elements):
+                    try:
+                        text = text_elem.text.strip()
+                        if not text or text == price_text:
+                            continue
+                        
+                        elem_location = text_elem.location
+                        y_distance = abs(elem_location['y'] - price_y)
+                        
+                        # If element is close vertically, it's likely part of same product
+                        if y_distance <= 200:  # Within 200 pixels
+                            related_texts.append(text)
+                            print(f"  Grouped '{text}' with '{price_text}' (Y distance: {y_distance})")
+                    except:
+                        continue
+                
+                price_containers.append({
+                    'price_text': price_text,
+                    'all_texts': related_texts,
+                    'location': price_info['location']
+                })
+                
+                print(f"💰 Built container for '{price_text}': {related_texts}")
+            
+            print(f"Found {len(price_containers)} price containers")
+            
+            # Remove duplicates and process containers
+            unique_containers = []
+            for container in price_containers:
+                is_duplicate = False
+                for unique in unique_containers:
+                    if abs(container['location']['x'] - unique['location']['x']) < 20 and \
+                       abs(container['location']['y'] - unique['location']['y']) < 20:
+                        is_duplicate = True
+                        break
+                if not is_duplicate:
+                    unique_containers.append(container)
+            
+            print(f"After deduplication: {len(unique_containers)} unique containers")
+            
+            # Extract products with CORRECTED pricing logic (SAME AS LIDER)
+            for i, container in enumerate(unique_containers[:10]):
+                try:
+                    price_text = container['price_text']
+                    all_texts = container['all_texts']
+                    
+                    print(f"\n📦 Processing container {i+1}:")
+                    print(f"  Price text: '{price_text}'")
+                    print(f"  All texts: {all_texts}")
+                    
+                    # Parse price with CORRECTED logic
                     parsed_price = self._parse_chilean_price_corrected(price_text)
                     
                     if parsed_price['total_price'] <= 0:
+                        print(f"  ❌ Invalid price: {parsed_price}")
                         continue
                     
-                    # Find product name and size
-                    product_name, product_size = await self._find_product_details_near_price(price_elem, "Jumbo", i+1)
+                    # Extract product name and size from all texts (SAME AS LIDER)
+                    product_name, product_size = self._extract_product_name_and_size_corrected(all_texts, i+1)
+                    
+                    # Calculate price per liter if we have size (SAME AS LIDER)
+                    price_per_liter = 0
+                    if product_size and parsed_price['total_price'] > 0:
+                        # Extract volume in liters
+                        volume_match = re.search(r'(\d+(?:\.\d+)?)', product_size)
+                        if volume_match:
+                            volume = float(volume_match.group(1))
+                            if 'ml' in product_size.lower():
+                                volume = volume / 1000  # Convert ml to L
+                            
+                            # For promotions like "2x $4.000" for 2.5L bottles
+                            if parsed_price.get('is_promotion', False):
+                                total_volume = volume * parsed_price['quantity']
+                                price_per_liter = parsed_price['total_price'] / total_volume
+                            else:
+                                price_per_liter = parsed_price['total_price'] / volume
                     
                     product_info = {
                         'name': product_name,
                         'price': parsed_price['total_price'],
-                        'price_per_liter': parsed_price.get('price_per_liter', 0),
+                        'price_per_liter': round(price_per_liter, 2) if price_per_liter > 0 else 0,
                         'quantity': parsed_price.get('quantity', 1),
                         'size': product_size,
                         'price_text': price_text,
@@ -606,19 +703,26 @@ class MobileAppScraper:
                     
                     products.append(product_info)
                     
+                    # Enhanced logging with CORRECT pricing (SAME AS LIDER)
                     if parsed_price.get('is_promotion', False):
-                        print(f"✅ Extracted PROMO: {product_name} ({product_size}) - {parsed_price['quantity']} units for ${parsed_price['total_price']} (${parsed_price.get('price_per_liter', 0)}/L)")
+                        if price_per_liter > 0:
+                            print(f"✅ PROMO: {product_name} ({product_size}) - {parsed_price['quantity']} units for ${parsed_price['total_price']} = ${price_per_liter}/L")
+                        else:
+                            print(f"✅ PROMO: {product_name} ({product_size}) - {parsed_price['quantity']} units for ${parsed_price['total_price']}")
                     else:
-                        print(f"✅ Extracted: {product_name} ({product_size}) - ${parsed_price['total_price']}")
+                        if price_per_liter > 0:
+                            print(f"✅ Regular: {product_name} ({product_size}) - ${parsed_price['total_price']} = ${price_per_liter}/L")
+                        else:
+                            print(f"✅ Regular: {product_name} ({product_size}) - ${parsed_price['total_price']}")
                     
                 except Exception as e:
-                    print(f"⚠️ Error processing price element {i+1}: {e}")
+                    print(f"⚠️ Error processing container {i+1}: {e}")
                     continue
             
-            print(f"✅ Final Jumbo extraction: {len(products)} products found")
+            print(f"\n✅ CORRECTED Jumbo extraction: {len(products)} products with proper pricing")
             
         except Exception as e:
-            print(f"❌ Error in Jumbo product extraction: {e}")
+            print(f"❌ Error in corrected Jumbo product extraction: {e}")
         
         return products
     
