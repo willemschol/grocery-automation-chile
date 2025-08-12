@@ -300,7 +300,139 @@ class MobileAppScraper:
         except Exception as e:
             print(f"⚠️ Lider login handling: {e}")
     
-    async def _perform_jumbo_search(self, product_name: str) -> bool:
+    async def _perform_jumbo_search_anti_stale(self, product_name: str) -> bool:
+        """Anti-stale search method for Jumbo - find, click, clear, type, submit in rapid sequence"""
+        try:
+            print(f"🎯 Starting anti-stale Jumbo search for '{product_name}'")
+            
+            # Step 1: Find all potential search elements
+            potential_elements = self.find_search_elements_debug()
+            
+            if not potential_elements:
+                print("❌ No potential search elements found")
+                return False
+            
+            # Step 2: Try each element with rapid interaction sequence
+            for i, elem_info in enumerate(potential_elements):
+                try:
+                    print(f"🔄 Anti-stale attempt {i+1}: {elem_info['xpath']}")
+                    
+                    # Rapid sequence: find → click → clear → type → submit
+                    # This minimizes time between operations to avoid stale references
+                    
+                    # Find element
+                    search_element = self.driver.find_element(AppiumBy.XPATH, elem_info['xpath'])
+                    
+                    if not search_element.is_displayed() or not search_element.is_enabled():
+                        print(f"   ❌ Element not usable")
+                        continue
+                    
+                    # Rapid interaction sequence
+                    search_element.click()  # Focus
+                    time.sleep(0.5)  # Minimal wait
+                    
+                    search_element.clear()  # Clear existing text
+                    time.sleep(0.5)
+                    
+                    search_element.send_keys(product_name)  # Type text
+                    time.sleep(1)
+                    
+                    # Verify text was entered
+                    current_text = search_element.get_attribute("text") or search_element.text or ""
+                    if product_name.lower() in current_text.lower():
+                        print(f"   ✅ Text verified: '{current_text}'")
+                        
+                        # Submit immediately
+                        try:
+                            self.driver.press_keycode(66)  # Enter key
+                            print(f"   🚀 Search submitted")
+                            time.sleep(3)  # Wait for navigation
+                            return await self._validate_jumbo_search_results()
+                        except:
+                            print(f"   ⚠️ Enter key failed, trying alternative submission")
+                            # Try alternative submission methods here if needed
+                            return False
+                    else:
+                        print(f"   ❌ Text verification failed")
+                        continue
+                        
+                except Exception as e:
+                    print(f"   ❌ Anti-stale attempt {i+1} failed: {e}")
+                    continue
+            
+            print("❌ All anti-stale attempts failed")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Anti-stale search error: {e}")
+            return False
+    
+    async def _perform_lider_search_anti_stale(self, product_name: str) -> bool:
+        """Anti-stale search method for Lider - find, click, clear, type, submit in rapid sequence"""
+        try:
+            print(f"🎯 Starting anti-stale Lider search for '{product_name}'")
+            
+            # Step 1: Find all potential search elements
+            potential_elements = self.find_search_elements_debug()
+            
+            if not potential_elements:
+                print("❌ No potential search elements found")
+                return False
+            
+            # Step 2: Try each element with rapid interaction sequence
+            for i, elem_info in enumerate(potential_elements):
+                try:
+                    print(f"🔄 Anti-stale attempt {i+1}: {elem_info['xpath']}")
+                    
+                    # Rapid sequence: find → click → clear → type → submit
+                    # This minimizes time between operations to avoid stale references
+                    
+                    # Find element
+                    search_element = self.driver.find_element(AppiumBy.XPATH, elem_info['xpath'])
+                    
+                    if not search_element.is_displayed() or not search_element.is_enabled():
+                        print(f"   ❌ Element not usable")
+                        continue
+                    
+                    # Rapid interaction sequence
+                    search_element.click()  # Focus
+                    time.sleep(0.5)  # Minimal wait
+                    
+                    search_element.clear()  # Clear existing text
+                    time.sleep(0.5)
+                    
+                    search_element.send_keys(product_name)  # Type text
+                    time.sleep(1)
+                    
+                    # Verify text was entered
+                    current_text = search_element.get_attribute("text") or search_element.text or ""
+                    if product_name.lower() in current_text.lower():
+                        print(f"   ✅ Text verified: '{current_text}'")
+                        
+                        # Submit immediately
+                        try:
+                            self.driver.press_keycode(66)  # Enter key
+                            print(f"   🚀 Search submitted")
+                            time.sleep(3)  # Wait for navigation
+                            return await self._validate_lider_search_results()
+                        except:
+                            print(f"   ⚠️ Enter key failed, trying alternative submission")
+                            # Try alternative submission methods here if needed
+                            return False
+                    else:
+                        print(f"   ❌ Text verification failed")
+                        continue
+                        
+                except Exception as e:
+                    print(f"   ❌ Anti-stale attempt {i+1} failed: {e}")
+                    continue
+            
+            print("❌ All anti-stale attempts failed")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Anti-stale search error: {e}")
+            return False
         """Perform search in Jumbo app with enhanced debugging"""
         try:
             print(f"🔍 Starting enhanced Jumbo search for '{product_name}'")
