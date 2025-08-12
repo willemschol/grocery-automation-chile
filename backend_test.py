@@ -5,7 +5,7 @@ import io
 from datetime import datetime
 
 class GroceryAutomationTester:
-    def __init__(self, base_url="https://6f023277-2e24-4ba8-9f6c-63dc72cd1bff.preview.emergentagent.com"):
+    def __init__(self, base_url="https://64c5e14d-3cd7-42b9-ac26-8918f0119836.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
