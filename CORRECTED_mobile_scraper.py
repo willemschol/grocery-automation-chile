@@ -648,49 +648,61 @@ class MobileAppScraper:
                 except:
                     continue
             
-            # Find price containers more intelligently
+            # FIXED: Build price containers by grouping related elements
             price_containers = []
             
-            for element in all_text_elements:
+            # Strategy: Group elements by their Y-coordinate proximity
+            price_elements = []
+            
+            # First, find all price elements with their positions
+            for i, element in enumerate(all_text_elements):
                 try:
                     text = element.text.strip()
                     if text and ('$' in text or 'peso' in text.lower()):
-                        # Found a price, get its container context
-                        try:
-                            # Get parent and grandparent containers
-                            parent = element.find_element(AppiumBy.XPATH, "./..")
-                            grandparent = parent.find_element(AppiumBy.XPATH, "./..")
-                            
-                            # Collect all text from this product container
-                            container_texts = []
-                            
-                            # Get all text from grandparent (product container)
-                            for child in grandparent.find_elements(AppiumBy.XPATH, ".//android.widget.TextView"):
-                                try:
-                                    child_text = child.text.strip()
-                                    if child_text:
-                                        container_texts.append(child_text)
-                                except:
-                                    continue
-                            
-                            price_containers.append({
-                                'price_text': text,
-                                'all_texts': container_texts,
-                                'location': element.location
-                            })
-                            
-                            print(f"💰 Price container for '{text}': {container_texts}")
-                            
-                        except:
-                            # Fallback: use just the price text
-                            price_containers.append({
-                                'price_text': text,
-                                'all_texts': [text],
-                                'location': element.location
-                            })
-                            
+                        price_elements.append({
+                            'element': element,
+                            'text': text,
+                            'location': element.location,
+                            'index': i
+                        })
                 except:
                     continue
+            
+            print(f"Found {len(price_elements)} price elements at positions:")
+            for pe in price_elements:
+                print(f"  '{pe['text']}' at Y={pe['location']['y']}")
+            
+            # For each price element, group nearby text elements
+            for price_info in price_elements:
+                price_y = price_info['location']['y']
+                price_text = price_info['text']
+                
+                # Collect texts that are near this price (within 200 pixels vertically)
+                related_texts = [price_text]  # Start with the price
+                
+                for j, text_elem in enumerate(all_text_elements):
+                    try:
+                        text = text_elem.text.strip()
+                        if not text or text == price_text:
+                            continue
+                        
+                        elem_location = text_elem.location
+                        y_distance = abs(elem_location['y'] - price_y)
+                        
+                        # If element is close vertically, it's likely part of same product
+                        if y_distance <= 200:  # Within 200 pixels
+                            related_texts.append(text)
+                            print(f"  Grouped '{text}' with '{price_text}' (Y distance: {y_distance})")
+                    except:
+                        continue
+                
+                price_containers.append({
+                    'price_text': price_text,
+                    'all_texts': related_texts,
+                    'location': price_info['location']
+                })
+                
+                print(f"💰 Built container for '{price_text}': {related_texts}")
             
             print(f"Found {len(price_containers)} price containers")
             
