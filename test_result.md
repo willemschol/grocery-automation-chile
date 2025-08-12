@@ -129,7 +129,7 @@ backend:
     file: "backend/mobile_scraper.py"
     stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: false
         agent: "user"
@@ -149,6 +149,27 @@ backend:
       - working: true
         agent: "testing"
         comment: "VERIFIED: Enhanced mobile automation system fully implemented and tested. ✅ All debugging methods implemented: debug_current_state(), save_page_source(), find_search_elements_debug(). ✅ Comprehensive element discovery with multiple targeting strategies (resource-id, content-desc, text, hint patterns). ✅ Retry logic with multiple text input strategies (send_keys, set_value, character-by-character). ✅ Search result validation methods (_validate_jumbo_search_results, _validate_lider_search_results). ✅ Enhanced product extraction with fallback mechanisms (_extract_single_product_info, _extract_products_from_price_elements). ✅ Comprehensive error handling and logging. ✅ /api/search-product endpoint working correctly with enhanced mobile automation. Backend logs confirm mobile scraper initialization and graceful Appium connection error handling (expected without physical devices). System ready for device testing."
+      - working: false
+        agent: "user"
+        comment: "User reported mixed results: Lider is bringing prices and names and managing promotions successfully, but Jumbo isn't bringing names nor recognizing promotions, reports 'Found 0 potential price elements'"
+      - working: true
+        agent: "main"
+        comment: "PHASE 3 FIX: Applied successful Lider approach to Jumbo. Implemented Y-coordinate proximity grouping for product data extraction, corrected price parsing for promotional pricing (e.g., '2 x $4.000' = $4.000 total, not $8.000), improved product name detection with keyword prioritization, enhanced size extraction with regex patterns, anti-stale element interaction methods, and proper driver session management to prevent app context mixing. Added methods: _perform_jumbo_search_anti_stale(), _perform_lider_search_anti_stale(), _extract_product_from_group_corrected(), _parse_chilean_price_corrected(), _extract_product_name_and_size_corrected(), _calculate_price_per_unit()"
+
+  - task: "Jumbo Product Extraction and Promotion Recognition"
+    implemented: true
+    working: false
+    file: "backend/mobile_scraper.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Jumbo app not extracting product names or recognizing promotions, reports 'Found 0 potential price elements'"
+      - working: true
+        agent: "main"
+        comment: "Implemented corrected extraction logic with Y-coordinate proximity grouping, robust price parsing for promotions, improved name detection with keyword filtering, and accurate price-per-unit calculations. Updated _extract_jumbo_products() to use corrected approach similar to successful Lider implementation."
 
   - task: "Appium Driver Initialization"
     implemented: true
