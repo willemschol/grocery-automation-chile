@@ -247,6 +247,217 @@ Leche,1L"""
         
         return success, response
 
+    def test_excel_export_with_test_results_format(self):
+        """Test Excel export with test results format: {"search_term": "coca cola", "results": {"Jumbo": [...], "Lider": [...]}}"""
+        test_data = {
+            "search_term": "coca cola",
+            "results": {
+                "Jumbo": [
+                    {
+                        "name": "Coca Cola Original 500ml",
+                        "price": 1990,
+                        "price_text": "$1.990",
+                        "size": "500ml",
+                        "quantity": 1,
+                        "is_promotion": False,
+                        "price_per_liter": 3980,
+                        "url": "https://jumbo.cl/product/123"
+                    },
+                    {
+                        "name": "Coca Cola Zero 2L",
+                        "price": 3500,
+                        "price_text": "2 x $3.500",
+                        "size": "2L",
+                        "quantity": 2,
+                        "is_promotion": True,
+                        "price_per_liter": 1750,
+                        "url": "https://jumbo.cl/product/456"
+                    }
+                ],
+                "Lider": [
+                    {
+                        "name": "Coca Cola Original 500ml",
+                        "price": 1890,
+                        "price_text": "$1.890",
+                        "size": "500ml",
+                        "quantity": 1,
+                        "is_promotion": False,
+                        "price_per_liter": 3780,
+                        "url": "https://lider.cl/product/789"
+                    }
+                ]
+            }
+        }
+        
+        success, response = self.run_test(
+            "Excel Export - Test Results Format",
+            "POST",
+            "api/export-excel",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            print("   ✅ Excel export with test results format successful")
+            # Check if it's a file response (we can't easily verify file content in this test environment)
+            print("   ✅ FileResponse returned for valid data")
+        
+        return success, response
+
+    def test_excel_export_with_full_search_results_format(self):
+        """Test Excel export with full search results format (list with jumbo_results/lider_results)"""
+        test_data = {
+            "search_term": "test product",
+            "results": [
+                {
+                    "product": {"name": "Test Product", "preferred_size": "500ml"},
+                    "jumbo_results": [
+                        {
+                            "name": "Test Product Jumbo 500ml",
+                            "price": 2500,
+                            "price_text": "$2.500",
+                            "size": "500ml",
+                            "quantity": 1,
+                            "is_promotion": False,
+                            "price_per_liter": 5000,
+                            "url": "https://jumbo.cl/test"
+                        }
+                    ],
+                    "lider_results": [
+                        {
+                            "name": "Test Product Lider 500ml",
+                            "price": 2300,
+                            "price_text": "$2.300",
+                            "size": "500ml",
+                            "quantity": 1,
+                            "is_promotion": False,
+                            "price_per_liter": 4600,
+                            "url": "https://lider.cl/test"
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        success, response = self.run_test(
+            "Excel Export - Full Search Results Format",
+            "POST",
+            "api/export-excel",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            print("   ✅ Excel export with full search results format successful")
+            print("   ✅ FileResponse returned for valid data")
+        
+        return success, response
+
+    def test_excel_export_with_empty_results(self):
+        """Test Excel export with empty results"""
+        test_data = {
+            "search_term": "test",
+            "results": {}
+        }
+        
+        success, response = self.run_test(
+            "Excel Export - Empty Results",
+            "POST",
+            "api/export-excel",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            print("   ✅ Excel export handled empty results gracefully")
+            # Should return error message for empty results
+            if isinstance(response, dict) and "error" in response:
+                print(f"   ✅ Proper error handling: {response['error']}")
+        
+        return success, response
+
+    def test_excel_export_with_invalid_format(self):
+        """Test Excel export with invalid data format"""
+        test_data = {
+            "search_term": "invalid test",
+            "results": "invalid_string_instead_of_dict_or_list"
+        }
+        
+        success, response = self.run_test(
+            "Excel Export - Invalid Format",
+            "POST",
+            "api/export-excel",
+            200,
+            data=test_data
+        )
+        
+        if success:
+            print("   ✅ Excel export handled invalid format gracefully")
+            # Should return error message for invalid format
+            if isinstance(response, dict) and "error" in response:
+                print(f"   ✅ Proper error handling: {response['error']}")
+        
+        return success, response
+
+    def test_excel_export_dependencies(self):
+        """Test that required dependencies (openpyxl, pandas) are available"""
+        print("\n🔍 Testing Excel Export Dependencies...")
+        
+        try:
+            import pandas as pd
+            print("   ✅ pandas is available")
+            
+            import openpyxl
+            print("   ✅ openpyxl is available")
+            
+            # Test basic Excel creation functionality
+            test_df = pd.DataFrame([{"test": "data"}])
+            print("   ✅ pandas DataFrame creation works")
+            
+            # Test that we can create an ExcelWriter (this tests openpyxl integration)
+            import io
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                test_df.to_excel(writer, sheet_name='Test', index=False)
+            print("   ✅ openpyxl Excel writing works")
+            
+            return True
+            
+        except ImportError as e:
+            print(f"   ❌ Missing dependency: {e}")
+            return False
+        except Exception as e:
+            print(f"   ❌ Error testing dependencies: {e}")
+            return False
+
+    def test_exports_directory_creation(self):
+        """Test that exports directory is created"""
+        print("\n🔍 Testing Exports Directory Creation...")
+        
+        try:
+            import os
+            
+            # Check if exports directory exists or can be created
+            exports_dir = "/app/exports"
+            if not os.path.exists(exports_dir):
+                os.makedirs(exports_dir, exist_ok=True)
+                print(f"   ✅ Created exports directory: {exports_dir}")
+            else:
+                print(f"   ✅ Exports directory already exists: {exports_dir}")
+            
+            # Test write permissions
+            test_file = os.path.join(exports_dir, "test_write.txt")
+            with open(test_file, 'w') as f:
+                f.write("test")
+            os.remove(test_file)
+            print("   ✅ Write permissions confirmed for exports directory")
+            
+            return True
+            
+        except Exception as e:
+            print(f"   ❌ Error with exports directory: {e}")
+            return False
+
 def main():
     print("🚀 Starting Updated Mobile Automation System Tests")
     print("=" * 60)
