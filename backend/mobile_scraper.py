@@ -972,96 +972,117 @@ class MobileAppScraper:
         return products
     
     async def _extract_lider_products(self) -> List[Dict]:
-        """Extract product information from Lider search results"""
+        """Extract product information from Lider search results with enhanced debugging"""
         products = []
         
         try:
-            print("📦 Extracting Lider products...")
+            print("📦 Starting enhanced Lider product extraction...")
             
-            # Similar logic to Jumbo extraction
-            product_selectors = [
+            # Save page source for analysis
+            self.save_page_source(f"/tmp/lider_products_page.xml")
+            
+            # Step 1: Find all elements with dollar signs (price indicators)
+            dollar_elements = []
+            try:
+                dollar_elements = self.driver.find_elements(AppiumBy.XPATH, "//*[contains(text(),'$')]")
+                print(f"🔍 Found {len(dollar_elements)} elements with '$' symbol")
+                
+                # Log first few for debugging
+                for i, elem in enumerate(dollar_elements[:5]):
+                    try:
+                        text = elem.text.strip()
+                        location = elem.location
+                        print(f"  ${i+1}: '{text}' at {location}")
+                    except:
+                        continue
+                        
+            except Exception as e:
+                print(f"❌ Error finding dollar elements: {e}")
+            
+            # Step 2: Try comprehensive product container selectors (similar to Jumbo)
+            product_container_selectors = [
+                # Generic product containers
                 "//*[contains(@resource-id,'product')]",
                 "//*[contains(@class,'product')]",
-                "//*[contains(@resource-id,'item')]",
-                "//*[contains(@class,'item')]"
+                "//*[contains(@resource-id,'item')]", 
+                "//*[contains(@class,'item')]",
+                "//*[contains(@resource-id,'card')]",
+                "//*[contains(@class,'card')]",
+                
+                # Grid/list containers
+                "//*[contains(@resource-id,'grid')]//*",
+                "//*[contains(@resource-id,'list')]//*",
+                "//*[contains(@class,'grid')]//*",
+                "//*[contains(@class,'list')]//*",
+                
+                # RecyclerView containers (common in Android)
+                "//androidx.recyclerview.widget.RecyclerView//*",
+                "//android.support.v7.widget.RecyclerView//*",
+                
+                # Common Android view containers
+                "//android.widget.LinearLayout[.//text()[contains(text(),'$')]]",
+                "//android.widget.RelativeLayout[.//text()[contains(text(),'$')]]",
+                "//android.widget.FrameLayout[.//text()[contains(text(),'$')]]",
+                "//android.view.ViewGroup[.//text()[contains(text(),'$')]]"
             ]
             
             product_elements = []
-            for selector in product_selectors:
+            successful_selector = None
+            
+            for selector in product_container_selectors:
                 try:
                     elements = self.driver.find_elements(AppiumBy.XPATH, selector)
                     if elements:
-                        product_elements = elements[:10]  # Limit to first 10
-                        print(f"✅ Found {len(product_elements)} products with selector: {selector}")
-                        break
-                except:
+                        # Filter elements that likely contain products (have text and reasonable size)
+                        valid_elements = []
+                        for elem in elements:
+                            try:
+                                if elem.is_displayed() and elem.size['height'] > 50 and elem.size['width'] > 50:
+                                    # Check if element or its children contain price
+                                    elem_text = elem.text or ""
+                                    if "$" in elem_text or len(elem_text.strip()) > 0:
+                                        valid_elements.append(elem)
+                            except:
+                                continue
+                        
+                        if valid_elements:
+                            product_elements = valid_elements[:15]  # Limit to first 15
+                            successful_selector = selector
+                            print(f"✅ Found {len(product_elements)} valid product elements with selector: {selector}")
+                            break
+                except Exception as selector_error:
+                    print(f"❌ Error with selector '{selector}': {selector_error}")
                     continue
             
             if not product_elements:
-                print("❌ No product elements found")
-                return products
+                print("❌ No product container elements found")
+                
+                # Fallback: Try to extract any element containing prices
+                print("🔄 Attempting fallback extraction from price elements...")
+                return await self._extract_products_from_price_elements(dollar_elements, "Lider")
+            
+            # Step 3: Extract product information from containers
+            print(f"📦 Processing {len(product_elements)} product containers...")
             
             for i, element in enumerate(product_elements):
                 try:
-                    print(f"📦 Processing product {i+1}...")
+                    print(f"📦 Processing product container {i+1}/{len(product_elements)}...")
                     
-                    # Extract product name
-                    name = "Unknown"
-                    name_selectors = [
-                        ".//text()[contains(@resource-id,'name')]",
-                        ".//text()[contains(@resource-id,'title')]", 
-                        ".//text()[contains(@class,'name')]",
-                        ".//text()[contains(@class,'title')]"
-                    ]
-                    
-                    for selector in name_selectors:
-                        try:
-                            name_element = element.find_element(AppiumBy.XPATH, selector)
-                            name = name_element.text.strip()
-                            if name:
-                                break
-                        except:
-                            continue
-                    
-                    # Extract price
-                    price_text = "$0"
-                    price_selectors = [
-                        ".//text()[contains(@resource-id,'price')]",
-                        ".//text()[contains(@class,'price')]",
-                        ".//text()[contains(@resource-id,'precio')]",
-                        ".//text()[contains(text(),'$')]"
-                    ]
-                    
-                    for selector in price_selectors:
-                        try:
-                            price_element = element.find_element(AppiumBy.XPATH, selector)
-                            price_text = price_element.text.strip()
-                            if '$' in price_text:
-                                break
-                        except:
-                            continue
-                    
-                    # Parse numeric price
-                    price = self._parse_chilean_price(price_text)
-                    
-                    if name != "Unknown" and price > 0:
-                        products.append({
-                            'name': name,
-                            'price': price,
-                            'price_text': price_text,
-                            'store': 'Lider',
-                            'url': ''  # Can be extracted if needed
-                        })
-                        print(f"✅ Product added: {name} - ${price}")
+                    product_info = await self._extract_single_product_info(element, "Lider")
+                    if product_info:
+                        products.append(product_info)
+                        print(f"✅ Product {i+1} extracted: {product_info['name']} - ${product_info['price']}")
+                    else:
+                        print(f"⚠️ Could not extract info from product container {i+1}")
                     
                 except Exception as e:
-                    print(f"⚠️ Error processing product {i+1}: {e}")
+                    print(f"❌ Error processing product container {i+1}: {e}")
                     continue
             
-            print(f"✅ Extracted {len(products)} products from Lider")
+            print(f"✅ Successfully extracted {len(products)} products from Lider")
             
         except Exception as e:
-            print(f"❌ Error extracting Lider products: {e}")
+            print(f"❌ Error in enhanced Lider product extraction: {e}")
         
         return products
     
