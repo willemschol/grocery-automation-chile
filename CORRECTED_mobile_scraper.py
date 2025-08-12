@@ -347,7 +347,7 @@ class MobileAppScraper:
     # ============================================================================
     
     async def _perform_jumbo_search_anti_stale(self, product_name: str) -> bool:
-        """Perform search in Jumbo app with anti-stale element strategy"""
+        """Perform search in Jumbo app with anti-stale element strategy and navigation validation"""
         try:
             print(f"🔍 Jumbo anti-stale search for '{product_name}'")
             
@@ -387,10 +387,91 @@ class MobileAppScraper:
                         
                         # Submit immediately
                         self.driver.press_keycode(66)  # Enter key
+                        print("   🚀 Search submitted, waiting for results...")
                         time.sleep(8)  # Wait for results
                         
-                        print("✅ Jumbo search sequence completed")
-                        return True
+                        # CRITICAL: Validate we stayed on results page
+                        print("   🎯 Validating navigation to results page...")
+                        
+                        # Check current activity and page content
+                        current_activity = self.driver.current_activity
+                        print(f"   📱 Current activity: {current_activity}")
+                        
+                        # Look for evidence we're on results vs home
+                        results_indicators = [
+                            "//*[contains(@text,'$')]",  # Any price
+                            "//*[contains(@text,'resultado')]",
+                            "//*[contains(@text,'Resultado')]",
+                            "//*[contains(@resource-id,'product')]",
+                            "//*[contains(@class,'product')]",
+                            "//*[contains(@text,'precio')]",
+                            "//*[contains(@text,'Precio')]"
+                        ]
+                        
+                        results_found = False
+                        for indicator in results_indicators:
+                            try:
+                                elements = self.driver.find_elements(AppiumBy.XPATH, indicator)
+                                if elements:
+                                    print(f"   ✅ Found results indicator: {indicator} ({len(elements)} elements)")
+                                    results_found = True
+                                    break
+                            except:
+                                continue
+                        
+                        if results_found:
+                            print("✅ Jumbo search completed - confirmed on results page")
+                            return True
+                        else:
+                            print("❌ Jumbo search failed - not on results page, probably returned to home")
+                            
+                            # Debug: Show what's actually on screen
+                            try:
+                                all_texts = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.TextView")
+                                print(f"   📋 Current page has {len(all_texts)} text elements:")
+                                for j, text_elem in enumerate(all_texts[:15]):
+                                    try:
+                                        text = text_elem.text.strip()
+                                        if text:
+                                            print(f"      {j+1}. '{text}'")
+                                    except:
+                                        continue
+                            except:
+                                pass
+                            
+                            # Try alternate submission methods
+                            print("   🔄 Trying alternate search submission...")
+                            
+                            # Try to find and click search button instead of Enter key
+                            button_selectors = [
+                                "//*[contains(@content-desc,'search')]",
+                                "//*[contains(@content-desc,'buscar')]",  
+                                "//*[contains(@text,'Buscar')]",
+                                "//android.widget.Button[contains(@content-desc,'search')]"
+                            ]
+                            
+                            for btn_selector in button_selectors:
+                                try:
+                                    search_btn = self.driver.find_element(AppiumBy.XPATH, btn_selector)
+                                    if search_btn.is_displayed():
+                                        search_btn.click()
+                                        print(f"   ✅ Clicked search button: {btn_selector}")
+                                        time.sleep(8)
+                                        
+                                        # Check again for results
+                                        for indicator in results_indicators:
+                                            try:
+                                                elements = self.driver.find_elements(AppiumBy.XPATH, indicator)
+                                                if elements:
+                                                    print(f"   ✅ Now found results: {indicator}")
+                                                    return True
+                                            except:
+                                                continue
+                                        break
+                                except:
+                                    continue
+                            
+                            continue  # Try next selector
                         
                     except Exception as sequence_error:
                         print(f"   ❌ Sequence failed: {sequence_error}")
