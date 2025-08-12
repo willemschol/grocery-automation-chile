@@ -191,6 +191,148 @@ async def search_all_products(request: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error searching products: {str(e)}")
 
+@app.post("/api/export-excel")
+async def export_search_results_to_excel(search_data: dict):
+    """Export search results to Excel file"""
+    try:
+        print("📊 Creating Excel export...")
+        
+        # Extract search results from the request
+        results = search_data.get('results', {})
+        search_term = search_data.get('search_term', 'product_search')
+        
+        if not results:
+            return {"error": "No results to export"}
+        
+        # Create DataFrame
+        df_data = []
+        
+        # Handle different result formats
+        if isinstance(results, dict):
+            # Handle format: {"Jumbo": [...], "Lider": [...]}
+            for store_name, products in results.items():
+                if isinstance(products, list):
+                    for product in products:
+                        row = {
+                            'Store': store_name,
+                            'Product Name': product.get('name', 'Unknown'),
+                            'Price (CLP)': product.get('price', 0),
+                            'Price Text': product.get('price_text', ''),
+                            'Size': product.get('size', ''),
+                            'Quantity': product.get('quantity', 1),
+                            'Is Promotion': 'Yes' if product.get('is_promotion', False) else 'No',
+                            'Price per Liter': product.get('price_per_liter', 0),
+                            'URL': product.get('url', '')
+                        }
+                        df_data.append(row)
+        elif isinstance(results, list):
+            # Handle single search result format
+            for result in results:
+                # Handle jumbo_results and lider_results format
+                jumbo_results = result.get('jumbo_results', [])
+                lider_results = result.get('lider_results', [])
+                
+                for product in jumbo_results:
+                    row = {
+                        'Store': 'Jumbo',
+                        'Product Name': product.get('name', 'Unknown'),
+                        'Price (CLP)': product.get('price', 0),
+                        'Price Text': product.get('price_text', ''),
+                        'Size': product.get('size', ''),
+                        'Quantity': product.get('quantity', 1),
+                        'Is Promotion': 'Yes' if product.get('is_promotion', False) else 'No',
+                        'Price per Liter': product.get('price_per_liter', 0),
+                        'URL': product.get('url', '')
+                    }
+                    df_data.append(row)
+                
+                for product in lider_results:
+                    row = {
+                        'Store': 'Lider',
+                        'Product Name': product.get('name', 'Unknown'),
+                        'Price (CLP)': product.get('price', 0),
+                        'Price Text': product.get('price_text', ''),
+                        'Size': product.get('size', ''),
+                        'Quantity': product.get('quantity', 1),
+                        'Is Promotion': 'Yes' if product.get('is_promotion', False) else 'No',
+                        'Price per Liter': product.get('price_per_liter', 0),
+                        'URL': product.get('url', '')
+                    }
+                    df_data.append(row)
+        
+        if not df_data:
+            return {"error": "No product data found to export"}
+        
+        # Create DataFrame
+        df = pd.DataFrame(df_data)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"search_results_{search_term}_{timestamp}.xlsx"
+        filepath = os.path.join("exports", filename)
+        
+        # Create exports directory if it doesn't exist
+        os.makedirs("exports", exist_ok=True)
+        
+        # Create Excel file with formatting
+        with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+            # Write main data
+            df.to_excel(writer, sheet_name='Search Results', index=False)
+            
+            # Get the workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets['Search Results']
+            
+            # Auto-adjust column widths
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                
+                adjusted_width = min(max_length + 2, 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Add summary sheet
+            if len(df) > 0:
+                # Store summary
+                store_summary = df.groupby('Store').agg({
+                    'Product Name': 'count',
+                    'Price (CLP)': ['min', 'max', 'mean']
+                }).round(2)
+                
+                store_summary.columns = ['Product Count', 'Min Price', 'Max Price', 'Avg Price']
+                store_summary.reset_index(inplace=True)
+                
+                store_summary.to_excel(writer, sheet_name='Summary', index=False, startrow=0)
+                
+                # Add search info
+                search_info = pd.DataFrame([
+                    ['Search Term', search_term],
+                    ['Total Products Found', len(df)],
+                    ['Export Date', datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+                    ['Stores Searched', ', '.join(df['Store'].unique())]
+                ], columns=['Metric', 'Value'])
+                
+                search_info.to_excel(writer, sheet_name='Summary', index=False, startrow=len(store_summary) + 3)
+        
+        print(f"✅ Excel file created: {filepath}")
+        
+        return FileResponse(
+            path=filepath,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            filename=filename
+        )
+        
+    except Exception as e:
+        print(f"❌ Error creating Excel export: {e}")
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
