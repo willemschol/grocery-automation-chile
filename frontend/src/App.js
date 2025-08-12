@@ -100,6 +100,67 @@ function App() {
     }
   };
 
+  const exportToExcel = async () => {
+    try {
+      setLoading(true);
+      
+      // Prepare data for export
+      let exportData = {};
+      
+      if (testResults) {
+        // Export test results
+        exportData = {
+          search_term: testResults.product_name || 'test_search',
+          results: {
+            'Jumbo': testResults.jumbo_results || [],
+            'Lider': testResults.lider_results || []
+          }
+        };
+      } else if (searchResults.length > 0) {
+        // Export full search results
+        exportData = {
+          search_term: 'full_search',
+          results: searchResults
+        };
+      } else {
+        alert('No hay resultados para exportar');
+        return;
+      }
+      
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/export-excel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exportData)
+      });
+      
+      if (response.ok) {
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `search_results_${new Date().getTime()}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        alert('¡Archivo Excel descargado exitosamente!');
+      } else {
+        const errorData = await response.json();
+        alert(`Error exportando a Excel: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exportando a Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
