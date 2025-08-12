@@ -19,8 +19,17 @@ class MobileAppScraper:
         self.appium_port = 4724
         
     def setup_driver(self, app_package: str = None):
-        """Initialize Appium driver for Android automation"""
+        """Initialize Appium driver for Android automation with proper session management"""
         try:
+            # Close any existing driver to prevent context mixing
+            if self.driver:
+                try:
+                    self.driver.quit()
+                    print("🔄 Closed existing driver to prevent app context mixing")
+                except:
+                    pass
+                self.driver = None
+                
             options = UiAutomator2Options()
             options.platform_name = "Android"
             options.device_name = "grocery_automation" 
@@ -30,6 +39,7 @@ class MobileAppScraper:
             
             if app_package:
                 options.app_package = app_package
+                print(f"📱 Setting up driver for app package: {app_package}")
                 
             # Additional capabilities for stability
             options.new_command_timeout = 300  # 5 minutes
