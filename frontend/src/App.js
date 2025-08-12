@@ -287,8 +287,23 @@ function App() {
                 {testResults && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Resultados para "{testResults.product_name}"</h4>
-                      <Badge variant="outline">{testResults.total_found} productos encontrados</Badge>
+                      <div>
+                        <h4 className="font-medium">Resultados para "{testResults.product_name}"</h4>
+                        <Badge variant="outline">{testResults.total_found} productos encontrados</Badge>
+                      </div>
+                      <Button
+                        onClick={exportToExcel}
+                        disabled={loading}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {loading ? (
+                          <Loader className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <Download className="h-3 w-3 mr-1" />
+                        )}
+                        Excel
+                      </Button>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
