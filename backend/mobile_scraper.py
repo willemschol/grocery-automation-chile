@@ -733,117 +733,90 @@ class MobileAppScraper:
             return False
     
     async def _extract_jumbo_products(self) -> List[Dict]:
-        """Extract product information from Jumbo search results with enhanced debugging"""
+        """Extract product information from Jumbo search results using corrected proximity-based approach"""
         products = []
         
         try:
-            print("📦 Starting enhanced Jumbo product extraction...")
+            print("📦 Starting corrected Jumbo product extraction with Y-coordinate proximity grouping...")
             
             # Save page source for analysis
             self.save_page_source(f"/tmp/jumbo_products_page.xml")
             
-            # Step 1: Find all elements with dollar signs (price indicators)
-            dollar_elements = []
+            # Get all TextView elements that might contain product information
+            all_text_elements = []
             try:
-                dollar_elements = self.driver.find_elements(AppiumBy.XPATH, "//*[contains(text(),'$')]")
-                print(f"🔍 Found {len(dollar_elements)} elements with '$' symbol")
+                text_views = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.TextView")
+                print(f"🔍 Found {len(text_views)} TextView elements total")
                 
-                # Log first few for debugging
-                for i, elem in enumerate(dollar_elements[:5]):
+                for elem in text_views:
                     try:
-                        text = elem.text.strip()
-                        location = elem.location
-                        print(f"  ${i+1}: '{text}' at {location}")
+                        text = elem.text.strip() if elem.text else ""
+                        if text and len(text) > 0:
+                            location = elem.location
+                            all_text_elements.append({
+                                'element': elem,
+                                'text': text,
+                                'x': location['x'],
+                                'y': location['y'],
+                                'size': elem.size
+                            })
                     except:
                         continue
                         
+                print(f"📝 Extracted {len(all_text_elements)} valid text elements")
+                
             except Exception as e:
-                print(f"❌ Error finding dollar elements: {e}")
+                print(f"❌ Error finding text elements: {e}")
+                return []
             
-            # Step 2: Try comprehensive product container selectors
-            product_container_selectors = [
-                # Generic product containers
-                "//*[contains(@resource-id,'product')]",
-                "//*[contains(@class,'product')]",
-                "//*[contains(@resource-id,'item')]", 
-                "//*[contains(@class,'item')]",
-                "//*[contains(@resource-id,'card')]",
-                "//*[contains(@class,'card')]",
-                
-                # Grid/list containers
-                "//*[contains(@resource-id,'grid')]//*",
-                "//*[contains(@resource-id,'list')]//*",
-                "//*[contains(@class,'grid')]//*",
-                "//*[contains(@class,'list')]//*",
-                
-                # RecyclerView containers (common in Android)
-                "//androidx.recyclerview.widget.RecyclerView//*",
-                "//android.support.v7.widget.RecyclerView//*",
-                
-                # Common Android view containers
-                "//android.widget.LinearLayout[.//text()[contains(text(),'$')]]",
-                "//android.widget.RelativeLayout[.//text()[contains(text(),'$')]]",
-                "//android.widget.FrameLayout[.//text()[contains(text(),'$')]]",
-                "//android.view.ViewGroup[.//text()[contains(text(),'$')]]"
-            ]
+            if not all_text_elements:
+                print("❌ No text elements found")
+                return []
             
-            product_elements = []
-            successful_selector = None
+            # Find potential price elements first
+            price_elements = []
+            for elem_info in all_text_elements:
+                if "$" in elem_info['text'] or self._looks_like_price(elem_info['text']):
+                    price_elements.append(elem_info)
             
-            for selector in product_container_selectors:
+            print(f"💰 Found {len(price_elements)} potential price elements")
+            
+            if not price_elements:
+                print("❌ No potential price elements found")
+                return []
+            
+            # Group related elements by Y-coordinate proximity (within 200 pixels)
+            for i, price_elem in enumerate(price_elements):
                 try:
-                    elements = self.driver.find_elements(AppiumBy.XPATH, selector)
-                    if elements:
-                        # Filter elements that likely contain products (have text and reasonable size)
-                        valid_elements = []
-                        for elem in elements:
-                            try:
-                                if elem.is_displayed() and elem.size['height'] > 50 and elem.size['width'] > 50:
-                                    # Check if element or its children contain price
-                                    elem_text = elem.text or ""
-                                    if "$" in elem_text or len(elem_text.strip()) > 0:
-                                        valid_elements.append(elem)
-                            except:
-                                continue
-                        
-                        if valid_elements:
-                            product_elements = valid_elements[:15]  # Limit to first 15
-                            successful_selector = selector
-                            print(f"✅ Found {len(product_elements)} valid product elements with selector: {selector}")
-                            break
-                except Exception as selector_error:
-                    print(f"❌ Error with selector '{selector}': {selector_error}")
-                    continue
-            
-            if not product_elements:
-                print("❌ No product container elements found")
-                
-                # Fallback: Try to extract any element containing prices
-                print("🔄 Attempting fallback extraction from price elements...")
-                return await self._extract_products_from_price_elements(dollar_elements, "Jumbo")
-            
-            # Step 3: Extract product information from containers
-            print(f"📦 Processing {len(product_elements)} product containers...")
-            
-            for i, element in enumerate(product_elements):
-                try:
-                    print(f"📦 Processing product container {i+1}/{len(product_elements)}...")
+                    print(f"💰 Processing price element {i+1}/{len(price_elements)}: '{price_elem['text']}'")
                     
-                    product_info = await self._extract_single_product_info(element, "Jumbo")
+                    # Find all text elements within 200 pixels Y-range of this price
+                    related_elements = []
+                    price_y = price_elem['y']
+                    
+                    for text_elem in all_text_elements:
+                        if abs(text_elem['y'] - price_y) <= 200:  # Within 200 pixels vertically
+                            related_elements.append(text_elem)
+                    
+                    print(f"   📍 Found {len(related_elements)} related elements within Y-proximity")
+                    
+                    # Extract product information from this group
+                    product_info = self._extract_product_from_group_corrected(related_elements, "Jumbo")
+                    
                     if product_info:
                         products.append(product_info)
-                        print(f"✅ Product {i+1} extracted: {product_info['name']} - ${product_info['price']}")
+                        print(f"   ✅ Extracted: {product_info['name']} - ${product_info['price']}")
                     else:
-                        print(f"⚠️ Could not extract info from product container {i+1}")
-                    
+                        print(f"   ❌ Could not extract product from group")
+                        
                 except Exception as e:
-                    print(f"❌ Error processing product container {i+1}: {e}")
+                    print(f"❌ Error processing price element {i+1}: {e}")
                     continue
             
-            print(f"✅ Successfully extracted {len(products)} products from Jumbo")
+            print(f"✅ Successfully extracted {len(products)} products from Jumbo using corrected method")
             
         except Exception as e:
-            print(f"❌ Error in enhanced Jumbo product extraction: {e}")
+            print(f"❌ Error in corrected Jumbo product extraction: {e}")
         
         return products
     
