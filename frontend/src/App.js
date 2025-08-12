@@ -363,13 +363,29 @@ function App() {
         {searchResults.length > 0 && (
           <Card className="mt-8 bg-white/70 backdrop-blur-sm shadow-xl border-0">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span>Resultados de Búsqueda y Comparación</span>
-              </CardTitle>
-              <CardDescription>
-                Comparación de precios entre Jumbo y Lider
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div>
+                    <CardTitle>Resultados de Búsqueda y Comparación</CardTitle>
+                    <CardDescription>
+                      Comparación de precios entre Jumbo y Lider
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  onClick={exportToExcel}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {loading ? (
+                    <Loader className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Exportar Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
