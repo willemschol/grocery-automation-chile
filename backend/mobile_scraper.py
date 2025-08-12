@@ -1032,32 +1032,346 @@ class MobileAppScraper:
         
         return products
     
-    def _parse_chilean_price(self, price_text: str) -> float:
-        """Parse Chilean price format (e.g., $1.990, $12.350)"""
+    def _looks_like_price(self, text: str) -> bool:
+        """Check if text looks like a price (contains numbers and possibly currency indicators)"""
+        if not text:
+            return False
+        
+        # Check for common price patterns
+        price_patterns = [
+            r'\$\d+',  # $123
+            r'\d+\.\d+',  # 1.990 (Chilean format)
+            r'\d+,\d+',  # 1,990
+            r'\d+\s*x\s*\$\d+',  # 2 x $1000 (promotion format)
+            r'\d+\s*pesos',  # 1000 pesos
+            r'^\d+$'  # Just numbers (might be price without symbol)
+        ]
+        
+        for pattern in price_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                return True
+        
+        return False
+    
+    def _extract_product_from_group_corrected(self, related_elements: List[Dict], store_name: str) -> Dict:
+        """Extract product information from a group of related elements using corrected logic"""
+        try:
+            if not related_elements:
+                return None
+            
+            # Separate elements into categories
+            price_candidates = []
+            name_candidates = []
+            size_candidates = []
+            
+            for elem_info in related_elements:
+                text = elem_info['text']
+                
+                # Identify price elements
+                if "$" in text or self._looks_like_price(text):
+                    price_candidates.append(text)
+                
+                # Identify potential product names (longer text, contains keywords)
+                elif self._looks_like_product_name(text):
+                    name_candidates.append(text)
+                
+                # Identify size indicators
+                elif self._looks_like_size(text):
+                    size_candidates.append(text)
+            
+            print(f"   📊 Categories - Prices: {len(price_candidates)}, Names: {len(name_candidates)}, Sizes: {len(size_candidates)}")
+            
+            # Extract the best price using corrected parsing
+            price_value = 0.0
+            price_text = ""
+            promotion_info = {}
+            
+            for price_candidate in price_candidates:
+                parsed_result = self._parse_chilean_price_corrected(price_candidate)
+                if parsed_result['price'] > 0:
+                    price_value = parsed_result['price']
+                    price_text = price_candidate
+                    promotion_info = parsed_result['promotion']
+                    break
+            
+            # Extract the best product name
+            product_name = self._extract_product_name_and_size_corrected(name_candidates, size_candidates)
+            
+            if price_value > 0 and product_name and product_name != "Unknown Product":
+                product_info = {
+                    'name': product_name,
+                    'price': price_value,
+                    'price_text': price_text,
+                    'store': store_name,
+                    'url': '',
+                    'promotion': promotion_info
+                }
+                
+                # Calculate price per unit if size information is available
+                if size_candidates:
+                    unit_info = self._calculate_price_per_unit(price_value, size_candidates, promotion_info)
+                    if unit_info:
+                        product_info.update(unit_info)
+                
+                return product_info
+            
+            return None
+            
+        except Exception as e:
+            print(f"   ❌ Error extracting from group: {e}")
+            return None
+    
+    def _looks_like_product_name(self, text: str) -> bool:
+        """Check if text looks like a product name"""
+        if not text or len(text.strip()) < 3:
+            return False
+        
+        # Filter out generic texts
+        generic_texts = [
+            'ver más', 'ver todo', 'agregar', 'comprar', 'añadir', 'detalle',
+            'disponible', 'stock', 'envío', 'delivery', 'gratis', 'precio',
+            'oferta', 'descuento', 'promoción', 'unidad', 'kg', 'gr', 'ml', 'lt'
+        ]
+        
+        text_lower = text.lower().strip()
+        
+        # Skip if it's a generic text
+        for generic in generic_texts:
+            if generic in text_lower:
+                return False
+        
+        # Look for product keywords (prioritize food/beverage terms)
+        product_keywords = [
+            'coca', 'pepsi', 'bebida', 'agua', 'jugo', 'leche', 'yogurt',
+            'pan', 'arroz', 'fideos', 'pasta', 'aceite', 'azúcar', 'sal',
+            'detergente', 'jabón', 'shampoo', 'crema', 'galletas', 'chocolate'
+        ]
+        
+        # Higher priority if contains product keywords
+        for keyword in product_keywords:
+            if keyword in text_lower:
+                return True
+        
+        # General criteria: reasonable length and not pure numbers
+        if 5 <= len(text) <= 100 and not text.isdigit():
+            return True
+        
+        return False
+    
+    def _looks_like_size(self, text: str) -> bool:
+        """Check if text contains size/volume information"""
+        if not text:
+            return False
+        
+        size_patterns = [
+            r'\d+\s*ml', r'\d+\s*ML',
+            r'\d+\s*l', r'\d+\s*L', r'\d+\s*lt', r'\d+\s*LT',
+            r'\d+\s*gr', r'\d+\s*GR', r'\d+\s*g', r'\d+\s*G',
+            r'\d+\s*kg', r'\d+\s*KG',
+            r'\d+\s*cc', r'\d+\s*CC',
+            r'\d+\s*oz', r'\d+\s*OZ'
+        ]
+        
+        for pattern in size_patterns:
+            if re.search(pattern, text):
+                return True
+        
+        return False
+    
+    def _parse_chilean_price_corrected(self, price_text: str) -> Dict:
+        """Parse Chilean price format with corrected promotion handling"""
+        result = {
+            'price': 0.0,
+            'promotion': {
+                'is_promo': False,
+                'quantity': 1,
+                'total_price': 0.0,
+                'unit_price': 0.0
+            }
+        }
+        
         try:
             if not price_text:
-                return 0.0
+                return result
             
-            # Remove currency symbols and spaces
+            print(f"     🔍 Parsing price: '{price_text}'")
+            
+            # Check for promotion patterns like "2 x $4.000"
+            promo_pattern = r'(\d+)\s*x\s*\$\s*([0-9.,]+)'
+            promo_match = re.search(promo_pattern, price_text, re.IGNORECASE)
+            
+            if promo_match:
+                quantity = int(promo_match.group(1))
+                price_part = promo_match.group(2)
+                
+                # Parse the price part (Chilean format: periods as thousand separators)
+                clean_price = price_part.replace('.', '').replace(',', '.')
+                total_price = float(clean_price)
+                
+                # CORRECTED: For "2 x $4.000", this means $4.000 total for 2 items, not $8.000
+                unit_price = total_price / quantity
+                
+                result['price'] = total_price  # Return total price
+                result['promotion'] = {
+                    'is_promo': True,
+                    'quantity': quantity,
+                    'total_price': total_price,
+                    'unit_price': unit_price
+                }
+                
+                print(f"     💥 Promotion detected: {quantity} items for ${total_price} (${unit_price:.0f} each)")
+                return result
+            
+            # Regular price parsing
             clean_price = price_text.replace('$', '').replace(' ', '').replace('\n', '')
             
             # Handle Chilean thousand separators (periods)
-            # Chilean format: $1.990 = 1990 pesos
             if '.' in clean_price and ',' not in clean_price:
-                # Likely Chilean format with periods as thousand separators
+                # Chilean format: $1.990 = 1990 pesos
                 clean_price = clean_price.replace('.', '')
+            elif ',' in clean_price:
+                # Handle comma as decimal separator
+                clean_price = clean_price.replace('.', '').replace(',', '.')
             
             # Extract numeric value
-            price_match = re.search(r'[\d,]+', clean_price)
+            price_match = re.search(r'[\d.]+', clean_price)
             if price_match:
-                price_str = price_match.group().replace(',', '.')
-                return float(price_str)
+                price_value = float(price_match.group())
+                result['price'] = price_value
+                result['promotion']['total_price'] = price_value
+                result['promotion']['unit_price'] = price_value
+                
+                print(f"     💰 Regular price: ${price_value}")
+                return result
             
-            return 0.0
+            return result
             
         except Exception as e:
-            print(f"⚠️ Error parsing price '{price_text}': {e}")
-            return 0.0
+            print(f"     ❌ Error parsing price '{price_text}': {e}")
+            return result
+    
+    def _extract_product_name_and_size_corrected(self, name_candidates: List[str], size_candidates: List[str]) -> str:
+        """Extract the best product name with improved logic"""
+        try:
+            if not name_candidates:
+                return "Unknown Product"
+            
+            # Filter and rank name candidates
+            scored_names = []
+            
+            for name in name_candidates:
+                score = 0
+                name_lower = name.lower().strip()
+                
+                # Bonus for product keywords
+                product_keywords = [
+                    'coca', 'pepsi', 'sprite', 'fanta', 'bebida', 'agua', 'jugo', 
+                    'leche', 'yogurt', 'pan', 'arroz', 'fideos', 'pasta', 'aceite',
+                    'azúcar', 'sal', 'detergente', 'jabón', 'shampoo', 'crema',
+                    'galletas', 'chocolate', 'cerveza', 'vino'
+                ]
+                
+                for keyword in product_keywords:
+                    if keyword in name_lower:
+                        score += 10
+                        break
+                
+                # Bonus for reasonable length
+                if 5 <= len(name) <= 50:
+                    score += 5
+                elif len(name) > 50:
+                    score -= 2  # Penalize very long names
+                
+                # Bonus for containing size information
+                if any(size_word in name_lower for size_word in ['ml', 'l', 'gr', 'kg', 'cc']):
+                    score += 3
+                
+                # Penalty for generic words
+                generic_penalty_words = ['precio', 'oferta', 'descuento', 'stock', 'disponible']
+                for penalty_word in generic_penalty_words:
+                    if penalty_word in name_lower:
+                        score -= 5
+                
+                scored_names.append((name, score))
+            
+            # Sort by score and return the best name
+            scored_names.sort(key=lambda x: x[1], reverse=True)
+            best_name = scored_names[0][0]
+            
+            print(f"     📝 Selected name: '{best_name}' (score: {scored_names[0][1]})")
+            
+            # Append size information if available and not already in name
+            if size_candidates:
+                name_lower = best_name.lower()
+                for size in size_candidates:
+                    if not any(unit in name_lower for unit in ['ml', 'l', 'gr', 'kg', 'cc']) and \
+                       any(unit in size.lower() for unit in ['ml', 'l', 'gr', 'kg', 'cc']):
+                        best_name = f"{best_name} {size}"
+                        break
+            
+            return best_name
+            
+        except Exception as e:
+            print(f"     ❌ Error extracting product name: {e}")
+            return "Unknown Product"
+    
+    def _calculate_price_per_unit(self, price: float, size_candidates: List[str], promotion_info: Dict) -> Dict:
+        """Calculate price per liter/kg with corrected logic for promotions"""
+        try:
+            # Extract volume/weight from size candidates
+            volume_ml = 0
+            weight_gr = 0
+            
+            for size in size_candidates:
+                # Extract ML/L
+                ml_match = re.search(r'(\d+)\s*ml', size, re.IGNORECASE)
+                l_match = re.search(r'(\d+)\s*l[^a-zA-Z]|(\d+)\s*l$', size, re.IGNORECASE)
+                
+                if ml_match:
+                    volume_ml = int(ml_match.group(1))
+                elif l_match:
+                    volume_ml = int(l_match.group(1) or l_match.group(2)) * 1000
+                
+                # Extract GR/KG
+                gr_match = re.search(r'(\d+)\s*gr', size, re.IGNORECASE)
+                kg_match = re.search(r'(\d+)\s*kg', size, re.IGNORECASE)
+                
+                if gr_match:
+                    weight_gr = int(gr_match.group(1))
+                elif kg_match:
+                    weight_gr = int(kg_match.group(1)) * 1000
+                
+                if volume_ml > 0 or weight_gr > 0:
+                    break
+            
+            result = {}
+            
+            # Calculate price per liter (especially important for beverages)
+            if volume_ml > 0:
+                # Use unit price for promotions, total price for regular items
+                effective_price = promotion_info.get('unit_price', price) if promotion_info.get('is_promo') else price
+                price_per_liter = (effective_price / volume_ml) * 1000
+                
+                result['volume_ml'] = volume_ml
+                result['price_per_liter'] = round(price_per_liter, 2)
+                
+                print(f"     📏 Volume: {volume_ml}ml, Price per liter: ${price_per_liter:.2f}")
+            
+            # Calculate price per kg
+            if weight_gr > 0:
+                effective_price = promotion_info.get('unit_price', price) if promotion_info.get('is_promo') else price
+                price_per_kg = (effective_price / weight_gr) * 1000
+                
+                result['weight_gr'] = weight_gr
+                result['price_per_kg'] = round(price_per_kg, 2)
+                
+                print(f"     ⚖️ Weight: {weight_gr}gr, Price per kg: ${price_per_kg:.2f}")
+            
+            return result if result else None
+            
+        except Exception as e:
+            print(f"     ❌ Error calculating price per unit: {e}")
+            return None
     
     def get_app_info(self) -> Dict:
         """Get information about currently connected device and available apps"""
