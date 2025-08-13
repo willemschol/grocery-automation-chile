@@ -568,11 +568,14 @@ class MobileAutomationFixesTester:
                 print("   ❌ Extraction methods don't use broadened price detection")
                 return False
             
-            # Test 5: Verify navigation validation is integrated
-            if '_validate_jumbo_navigation' in jumbo_source:
-                print("   ✅ Jumbo search uses simplified navigation validation")
+            # Test 5: Verify navigation validation is integrated (check ultra-robust method)
+            jumbo_ultra_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_ultra_source = inspect.getsource(jumbo_ultra_method)
+            
+            if '_validate_jumbo_navigation' in jumbo_ultra_source:
+                print("   ✅ Jumbo ultra-robust method uses simplified navigation validation")
             else:
-                print("   ❌ Jumbo search doesn't use navigation validation")
+                print("   ❌ Jumbo ultra-robust method doesn't use navigation validation")
                 return False
             
             print("✅ Integration testing passed")
