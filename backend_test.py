@@ -1282,8 +1282,421 @@ Leche,1L"""
             print(f"   ❌ Error with exports directory: {e}")
             return False
 
+    def test_jumbo_specific_search_methods(self):
+        """Test Jumbo-specific search submission with 7 different search button patterns"""
+        print("\n🔍 Testing Jumbo-Specific Search Methods...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify _perform_jumbo_search_ultra_robust method exists
+            if not hasattr(mobile_scraper, '_perform_jumbo_search_ultra_robust'):
+                print("   ❌ _perform_jumbo_search_ultra_robust method not found")
+                return False
+            
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Test 2: Verify 7 different Jumbo search button patterns
+            expected_patterns = [
+                "//android.widget.ImageView[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                "//android.widget.ImageButton[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                "//*[contains(@resource-id,'search_button') or contains(@resource-id,'btn_search')]",
+                "//android.widget.Button[contains(@text,'Buscar') or contains(@text,'BUSCAR')]",
+                "//*[contains(@class,'SearchView')]//android.widget.ImageButton",
+                "//*[@content-desc='Search' or @content-desc='Buscar']",
+                "//android.widget.ImageView[@clickable='true'][contains(@bounds,'search')]"
+            ]
+            
+            print("   🔍 Checking for 7 Jumbo search button patterns...")
+            patterns_found = 0
+            for i, pattern in enumerate(expected_patterns, 1):
+                if pattern in jumbo_source:
+                    patterns_found += 1
+                    print(f"   ✅ Pattern {i} found: {pattern[:50]}...")
+                else:
+                    print(f"   ❌ Pattern {i} missing: {pattern[:50]}...")
+            
+            if patterns_found >= 7:
+                print(f"   ✅ Found {patterns_found}/7 Jumbo search button patterns")
+            else:
+                print(f"   ❌ Only found {patterns_found}/7 Jumbo search button patterns")
+                return False
+            
+            # Test 3: Verify jumbo_search_patterns variable exists
+            if 'jumbo_search_patterns' in jumbo_source:
+                print("   ✅ jumbo_search_patterns variable found")
+            else:
+                print("   ❌ jumbo_search_patterns variable not found")
+                return False
+            
+            # Test 4: Verify pattern iteration and logging
+            if 'for i, pattern in enumerate(jumbo_search_patterns' in jumbo_source:
+                print("   ✅ Pattern iteration logic found")
+            else:
+                print("   ❌ Pattern iteration logic not found")
+                return False
+            
+            # Test 5: Verify logging for each pattern attempt
+            if 'print(f"   🔍 Trying pattern {i}:' in jumbo_source:
+                print("   ✅ Pattern attempt logging found")
+            else:
+                print("   ❌ Pattern attempt logging not found")
+                return False
+            
+            print("✅ Jumbo-specific search methods test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing Jumbo-specific search methods: {e}")
+            return False
+
+    def test_alternative_keycode_methods(self):
+        """Test alternative Android keycode methods for search submission"""
+        print("\n🔍 Testing Alternative Keycode Methods...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Test 1: Verify alternative_methods list exists
+            if 'alternative_methods' in jumbo_source:
+                print("   ✅ alternative_methods list found")
+            else:
+                print("   ❌ alternative_methods list not found")
+                return False
+            
+            # Test 2: Verify specific keycodes are present
+            expected_keycodes = [
+                ('84', 'KEYCODE_SEARCH'),
+                ('23', 'KEYCODE_DPAD_CENTER'), 
+                ('61', 'KEYCODE_TAB')
+            ]
+            
+            print("   🔍 Checking for alternative keycodes...")
+            keycodes_found = 0
+            for keycode, name in expected_keycodes:
+                if keycode in jumbo_source and name in jumbo_source:
+                    keycodes_found += 1
+                    print(f"   ✅ {name} (keycode {keycode}) found")
+                else:
+                    print(f"   ❌ {name} (keycode {keycode}) missing")
+            
+            if keycodes_found >= 3:
+                print(f"   ✅ Found {keycodes_found}/3 alternative keycodes")
+            else:
+                print(f"   ❌ Only found {keycodes_found}/3 alternative keycodes")
+                return False
+            
+            # Test 3: Verify keycode execution logic
+            if 'self.driver.press_keycode(keycode)' in jumbo_source:
+                print("   ✅ Keycode execution logic found")
+            else:
+                print("   ❌ Keycode execution logic not found")
+                return False
+            
+            # Test 4: Verify fallback logic when search buttons fail
+            if 'If no search button, try alternative submission methods' in jumbo_source:
+                print("   ✅ Fallback logic documentation found")
+            else:
+                print("   ❌ Fallback logic documentation not found")
+                return False
+            
+            # Test 5: Verify final fallback with Enter key
+            if 'Final fallback: Enter key' in jumbo_source and '66' in jumbo_source:
+                print("   ✅ Final fallback Enter key (keycode 66) found")
+            else:
+                print("   ❌ Final fallback Enter key not found")
+                return False
+            
+            print("✅ Alternative keycode methods test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing alternative keycode methods: {e}")
+            return False
+
+    def test_activity_monitoring(self):
+        """Test activity monitoring after each submission method"""
+        print("\n🔍 Testing Activity Monitoring...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Test 1: Verify activity checking after keycode methods
+            if 'activity_check = self.driver.current_activity' in jumbo_source:
+                print("   ✅ Activity checking logic found")
+            else:
+                print("   ❌ Activity checking logic not found")
+                return False
+            
+            # Test 2: Verify MainActivity detection
+            if '.features.main.activity.MainActivity' in jumbo_source:
+                print("   ✅ MainActivity detection found")
+            else:
+                print("   ❌ MainActivity detection not found")
+                return False
+            
+            # Test 3: Verify activity change detection
+            if 'activity_check != ".features.main.activity.MainActivity"' in jumbo_source:
+                print("   ✅ Activity change detection logic found")
+            else:
+                print("   ❌ Activity change detection logic not found")
+                return False
+            
+            # Test 4: Verify success logging when activity changes
+            if 'worked! New activity:' in jumbo_source:
+                print("   ✅ Activity change success logging found")
+            else:
+                print("   ❌ Activity change success logging not found")
+                return False
+            
+            # Test 5: Verify failure logging when still in MainActivity
+            if 'still in MainActivity' in jumbo_source:
+                print("   ✅ MainActivity failure logging found")
+            else:
+                print("   ❌ MainActivity failure logging not found")
+                return False
+            
+            # Test 6: Verify final activity validation
+            if 'final_activity = self.driver.current_activity' in jumbo_source:
+                print("   ✅ Final activity validation found")
+            else:
+                print("   ❌ Final activity validation not found")
+                return False
+            
+            print("✅ Activity monitoring test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing activity monitoring: {e}")
+            return False
+
+    def test_strict_navigation_validation(self):
+        """Test strict navigation validation with no benefit of doubt"""
+        print("\n🔍 Testing Strict Navigation Validation...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify _validate_jumbo_navigation method exists
+            if not hasattr(mobile_scraper, '_validate_jumbo_navigation'):
+                print("   ❌ _validate_jumbo_navigation method not found")
+                return False
+            
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            # Test 2: Verify STRICT validation is documented
+            if 'STRICT Jumbo navigation validation' in validate_source:
+                print("   ✅ STRICT validation documentation found")
+            else:
+                print("   ❌ STRICT validation documentation not found")
+                return False
+            
+            # Test 3: Verify home page indicators
+            expected_home_indicators = [
+                "experiencia única", "variedad de cortes", "¡participa!",
+                "categorías destacadas", "frutas y verduras", "productos frecuentes",
+                "mostrar más", "despacho a:", "¿qué estás buscando?"
+            ]
+            
+            print("   🔍 Checking home page indicators...")
+            home_indicators_found = 0
+            for indicator in expected_home_indicators:
+                if f'"{indicator}"' in validate_source:
+                    home_indicators_found += 1
+                    print(f"   ✅ Home indicator found: {indicator}")
+                else:
+                    print(f"   ❌ Home indicator missing: {indicator}")
+            
+            if home_indicators_found >= 7:
+                print(f"   ✅ Found {home_indicators_found}/9 home page indicators")
+            else:
+                print(f"   ❌ Only found {home_indicators_found}/9 home page indicators")
+                return False
+            
+            # Test 4: Verify search result indicators
+            expected_search_indicators = [
+                "resultados", "productos encontrados", "filtrar resultados",
+                "ordenar por", "precio desde", "precio hasta", "agregar al carrito",
+                "disponible en tienda", "sin stock", "ver producto"
+            ]
+            
+            print("   🔍 Checking search result indicators...")
+            search_indicators_found = 0
+            for indicator in expected_search_indicators:
+                if f'"{indicator}"' in validate_source:
+                    search_indicators_found += 1
+                    print(f"   ✅ Search indicator found: {indicator}")
+                else:
+                    print(f"   ❌ Search indicator missing: {indicator}")
+            
+            if search_indicators_found >= 7:
+                print(f"   ✅ Found {search_indicators_found}/10 search result indicators")
+            else:
+                print(f"   ❌ Only found {search_indicators_found}/10 search result indicators")
+                return False
+            
+            # Test 5: Verify strict decision logic (no benefit of doubt)
+            if 'home_indicators_found >= 3' in validate_source:
+                print("   ✅ Strict home page detection (>= 3 indicators) found")
+            else:
+                print("   ❌ Strict home page detection not found")
+                return False
+            
+            # Test 6: Verify search result validation
+            if 'search_indicators_found >= 2' in validate_source:
+                print("   ✅ Search result validation (>= 2 indicators) found")
+            else:
+                print("   ❌ Search result validation not found")
+                return False
+            
+            # Test 7: Verify no benefit of doubt messaging
+            if 'clearly on home page' in validate_source:
+                print("   ✅ No benefit of doubt messaging found")
+            else:
+                print("   ❌ No benefit of doubt messaging not found")
+                return False
+            
+            # Test 8: Verify strict failure messaging
+            if 'Search failed - Jumbo returned to home instead of showing results' in validate_source:
+                print("   ✅ Strict failure messaging found")
+            else:
+                print("   ❌ Strict failure messaging not found")
+                return False
+            
+            print("✅ Strict navigation validation test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing strict navigation validation: {e}")
+            return False
+
+    def test_integration_with_mobile_automation(self):
+        """Test integration of enhanced Jumbo search methods with existing mobile automation"""
+        print("\n🔍 Testing Integration with Mobile Automation Infrastructure...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify search_jumbo_app calls ultra-robust method
+            search_jumbo_method = getattr(mobile_scraper, 'search_jumbo_app')
+            search_jumbo_source = inspect.getsource(search_jumbo_method)
+            
+            if '_perform_jumbo_search_ultra_robust' in search_jumbo_source:
+                print("   ✅ search_jumbo_app calls ultra-robust method")
+            else:
+                print("   ❌ search_jumbo_app does not call ultra-robust method")
+                return False
+            
+            # Test 2: Verify ultra-robust method calls validation
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            if '_validate_jumbo_navigation' in jumbo_source:
+                print("   ✅ Ultra-robust method calls navigation validation")
+            else:
+                print("   ❌ Ultra-robust method does not call navigation validation")
+                return False
+            
+            # Test 3: Verify proper driver session management
+            if 'setup_driver' in search_jumbo_source:
+                print("   ✅ Proper driver session management found")
+            else:
+                print("   ❌ Driver session management not found")
+                return False
+            
+            # Test 4: Verify correct package name usage
+            if 'com.cencosud.cl.jumboahora' in search_jumbo_source:
+                print("   ✅ Correct Jumbo package name found")
+            else:
+                print("   ❌ Correct Jumbo package name not found")
+                return False
+            
+            # Test 5: Verify product extraction integration
+            if '_extract_jumbo_products' in search_jumbo_source:
+                print("   ✅ Product extraction integration found")
+            else:
+                print("   ❌ Product extraction integration not found")
+                return False
+            
+            # Test 6: Verify error handling and cleanup
+            if 'finally:' in search_jumbo_source and 'close_driver' in search_jumbo_source:
+                print("   ✅ Error handling and cleanup found")
+            else:
+                print("   ❌ Error handling and cleanup not found")
+                return False
+            
+            # Test 7: Test API endpoint integration
+            print("   🔍 Testing API endpoint integration...")
+            
+            success, response = self.run_test(
+                "Enhanced Jumbo Search API Integration",
+                "POST",
+                "api/search-product",
+                200,
+                data={"product_name": "Coca Cola"}
+            )
+            
+            if success:
+                print("   ✅ API endpoint accessible with enhanced Jumbo search")
+                
+                # Check response structure
+                if 'jumbo_results' in response:
+                    print("   ✅ Response contains jumbo_results")
+                else:
+                    print("   ❌ Response missing jumbo_results")
+                    return False
+                
+            else:
+                print("   ❌ API endpoint failed")
+                return False
+            
+            print("✅ Integration with mobile automation test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing integration with mobile automation: {e}")
+            return False
+
 def main():
-    print("🚀 Starting Enhanced Per-Operation Element Re-Finding Mobile Automation Tests")
+    print("🚀 Starting Jumbo-Specific Search Submission and Strict Navigation Validation Tests")
     print("=" * 80)
     
     tester = GroceryAutomationTester()
