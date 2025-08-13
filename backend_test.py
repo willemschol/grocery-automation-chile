@@ -1719,8 +1719,8 @@ Leche,1L"""
                 
                 # Check if it's optional (has default value)
                 param = method_signature.parameters['target_price_elem']
-                if param.default is not None or param.default == inspect.Parameter.empty:
-                    print("   ✅ target_price_elem parameter is optional with default value")
+                if param.default is None:
+                    print("   ✅ target_price_elem parameter is optional with default value None")
                 else:
                     print("   ❌ target_price_elem parameter should be optional")
                     return False
