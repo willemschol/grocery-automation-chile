@@ -1202,8 +1202,8 @@ class MobileAppScraper:
                     price_value = parsed_result['price']
                     price_text = target_price_text
                     promotion_info = parsed_result['promotion']
-                    if promotion_info:
-                        print(f"     💰 {promotion_info['type'].title()}: {promotion_info['display']}")
+                    if promotion_info and promotion_info.get('is_promo', False):
+                        print(f"     💰 Promotion: {promotion_info['quantity']} x ${promotion_info['unit_price']:.0f} = ${promotion_info['total_price']:.0f}")
                     else:
                         print(f"     💰 Regular price: ${price_value}")
             
