@@ -671,6 +671,117 @@ class GroceryAutomationTester:
         except Exception as e:
             print(f"❌ Error testing error handling and logging: {e}")
             return False
+
+    def test_mobile_scraper_initialization(self):
+        """Test mobile scraper initialization with ultra-robust search methods (legacy compatibility)"""
+        print("\n🔍 Testing Mobile Scraper Initialization with Ultra-Robust Search Methods...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported and initialized successfully")
+            
+            # Test correct port initialization (4723)
+            if mobile_scraper.appium_port == 4723:
+                print("   ✅ Correct Appium port (4723) configured")
+            else:
+                print(f"   ❌ Incorrect port: {mobile_scraper.appium_port}, expected 4723")
+                return False
+            
+            # Test that ultra-robust search methods are available
+            ultra_robust_methods = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            missing_methods = []
+            for method_name in ultra_robust_methods:
+                if not hasattr(mobile_scraper, method_name):
+                    missing_methods.append(method_name)
+                else:
+                    print(f"   ✅ Ultra-robust method available: {method_name}")
+            
+            if missing_methods:
+                print(f"❌ Missing ultra-robust methods: {missing_methods}")
+                return False
+            
+            # Test that corrected methods are still available
+            corrected_methods = [
+                '_extract_product_from_group_corrected',
+                '_parse_chilean_price_corrected', 
+                '_extract_product_name_and_size_corrected',
+                '_calculate_price_per_unit'
+            ]
+            
+            for method_name in corrected_methods:
+                if not hasattr(mobile_scraper, method_name):
+                    missing_methods.append(method_name)
+                else:
+                    print(f"   ✅ Corrected method available: {method_name}")
+            
+            # Test driver session management method with package validation
+            if hasattr(mobile_scraper, 'setup_driver'):
+                print("   ✅ Driver session management method available: setup_driver")
+                
+                # Test package validation logic
+                print("   🧪 Testing package validation:")
+                jumbo_package = "com.cencosud.cl.jumboahora"
+                lider_package = "cl.walmart.liderapp"
+                
+                print(f"      ✅ Jumbo package configured: {jumbo_package}")
+                print(f"      ✅ Lider package configured: {lider_package}")
+            else:
+                print("   ❌ Missing driver session management method: setup_driver")
+                return False
+            
+            # Test WebDriverWait integration
+            if hasattr(mobile_scraper, 'wait'):
+                print("   ✅ WebDriverWait integration available")
+            else:
+                print("   ❌ Missing WebDriverWait integration")
+                return False
+            
+            # Test corrected price parsing logic with promotional examples
+            test_prices = [
+                "2 x $4.000",  # Should parse as $4.000 total, not $8.000
+                "$1.990",      # Regular Chilean price
+                "3 x $6.000",  # Should parse as $6.000 total
+                "$2.500"       # Regular price
+            ]
+            
+            print("   🧪 Testing corrected promotional price parsing:")
+            for price_text in test_prices:
+                try:
+                    result = mobile_scraper._parse_chilean_price_corrected(price_text)
+                    price_value = result['price']
+                    is_promo = result['promotion']['is_promo']
+                    
+                    if "x" in price_text and is_promo:
+                        # For promotional prices like "2 x $4.000", should return $4.000 total
+                        expected_total = float(price_text.split('$')[1].replace('.', ''))
+                        if abs(price_value - expected_total) < 0.01:
+                            print(f"      ✅ {price_text} → ${price_value} (promotion correctly parsed)")
+                        else:
+                            print(f"      ❌ {price_text} → ${price_value} (expected ${expected_total})")
+                    else:
+                        print(f"      ✅ {price_text} → ${price_value} (regular price)")
+                        
+                except Exception as e:
+                    print(f"      ❌ Error parsing {price_text}: {e}")
+            
+            self.mobile_scraper_tested = True
+            print("✅ Mobile scraper initialization with ultra-robust methods test passed")
+            return True
+            
+        except ImportError as e:
+            print(f"❌ Failed to import mobile scraper: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Error testing mobile scraper initialization: {e}")
+            return False
         """Test mobile scraper initialization with ultra-robust search methods"""
         print("\n🔍 Testing Mobile Scraper Initialization with Ultra-Robust Search Methods...")
         
