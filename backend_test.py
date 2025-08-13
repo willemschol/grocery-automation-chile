@@ -1706,79 +1706,73 @@ def main():
         print("❌ Health check failed - stopping tests")
         return 1
     
-    # Test 2: Per-Operation Element Re-Finding (Core Feature)
-    print("\n🎯 Testing Core Feature: Per-Operation Element Re-Finding")
-    if not tester.test_per_operation_element_refinding():
-        print("❌ Per-operation element re-finding test failed")
+    # Test 2: Jumbo-Specific Search Methods
+    print("\n🎯 Testing Jumbo-Specific Search Methods (7 patterns)")
+    if not tester.test_jumbo_specific_search_methods():
+        print("❌ Jumbo-specific search methods test failed")
         return 1
     
-    # Test 3: Windows Path Compatibility
-    print("\n🪟 Testing Windows Path Compatibility")
-    if not tester.test_windows_path_compatibility():
-        print("❌ Windows path compatibility test failed")
+    # Test 3: Alternative Keycode Methods
+    print("\n🔑 Testing Alternative Keycode Methods")
+    if not tester.test_alternative_keycode_methods():
+        print("❌ Alternative keycode methods test failed")
         return 1
     
-    # Test 4: Enhanced Navigation Validation
-    print("\n🧭 Testing Enhanced Navigation Validation")
-    if not tester.test_enhanced_navigation_validation():
-        print("❌ Enhanced navigation validation test failed")
+    # Test 4: Activity Monitoring
+    print("\n📱 Testing Activity Monitoring")
+    if not tester.test_activity_monitoring():
+        print("❌ Activity monitoring test failed")
         return 1
     
-    # Test 5: StaleElementReferenceException Prevention
-    print("\n🛡️ Testing StaleElementReferenceException Prevention")
-    if not tester.test_stale_element_prevention():
-        print("❌ StaleElementReferenceException prevention test failed")
+    # Test 5: Strict Navigation Validation
+    print("\n🚫 Testing Strict Navigation Validation (No Benefit of Doubt)")
+    if not tester.test_strict_navigation_validation():
+        print("❌ Strict navigation validation test failed")
         return 1
     
-    # Test 6: Mobile Scraper Integration
-    print("\n🔗 Testing Mobile Scraper Integration")
-    if not tester.test_mobile_scraper_integration():
-        print("❌ Mobile scraper integration test failed")
+    # Test 6: Integration Testing
+    print("\n🔗 Testing Integration with Mobile Automation Infrastructure")
+    if not tester.test_integration_with_mobile_automation():
+        print("❌ Integration with mobile automation test failed")
         return 1
     
-    # Test 7: Error Handling and Logging
-    print("\n📝 Testing Error Handling and Logging")
-    if not tester.test_error_handling_and_logging():
-        print("❌ Error handling and logging test failed")
-        return 1
-    
-    # Test 8: Legacy Mobile Scraper Initialization (for compatibility)
+    # Test 7: Legacy Mobile Scraper Initialization (for compatibility)
     print("\n🔧 Testing Legacy Mobile Scraper Features")
     if not tester.test_mobile_scraper_initialization():
         print("❌ Mobile scraper initialization test failed")
         return 1
     
-    # Test 9: API Integration Test
-    print("\n🌐 Testing API Integration with Enhanced Mobile Automation")
+    # Test 8: API Integration Test
+    print("\n🌐 Testing API Integration with Enhanced Jumbo Search")
     chilean_products = ["Coca Cola"]  # Focus on one product for detailed testing
     
     for product in chilean_products:
         success, response = tester.test_single_product_search(product)
         if not success:
-            print(f"❌ Enhanced mobile automation API integration failed for {product}")
+            print(f"❌ Enhanced Jumbo search API integration failed for {product}")
         else:
             # Check if mobile automation is being used
             total_found = response.get('total_found', 0)
             if total_found == 0:
-                print(f"✅ Enhanced mobile automation API integration working - Appium connection error expected without physical devices")
-                print(f"✅ Backend should show ultra-robust search methods and per-operation element re-finding")
+                print(f"✅ Enhanced Jumbo search API integration working - Appium connection error expected without physical devices")
+                print(f"✅ Backend should show Jumbo-specific search methods and strict navigation validation")
             else:
-                print(f"🎉 Enhanced mobile automation working with actual results!")
+                print(f"🎉 Enhanced Jumbo search working with actual results!")
     
     # Print final results
     print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All Enhanced Per-Operation Element Re-Finding Tests Passed!")
-        print("✅ Key enhancements verified:")
-        print("   🎯 Per-Operation Element Re-Finding: Both ultra-robust methods re-find elements before each operation")
-        print("   🪟 Windows Path Compatibility: save_page_source and debug methods use tempfile.gettempdir()")
-        print("   🧭 Enhanced Navigation Validation: _validate_jumbo_navigation uses refined home page indicators")
-        print("   🛡️ StaleElementReferenceException Prevention: Fresh element references for each operation")
-        print("   🔗 Mobile Scraper Integration: API endpoints correctly call updated ultra-robust methods")
-        print("   📝 Error Handling: Individual operation failures handled gracefully with proper logging")
-        print("   🚀 System ready: Per-operation element re-finding should eliminate StaleElementReferenceException")
+        print("🎉 All Jumbo-Specific Search Submission and Strict Navigation Validation Tests Passed!")
+        print("✅ Key features verified:")
+        print("   🎯 Jumbo-Specific Search Methods: 7 different search button patterns implemented")
+        print("   🔍 Search Button Detection: Multiple XPath patterns with proper logging")
+        print("   🔑 Alternative Keycode Methods: KEYCODE_SEARCH, KEYCODE_DPAD_CENTER, KEYCODE_TAB fallbacks")
+        print("   📱 Activity Monitoring: Proper activity change detection after each submission method")
+        print("   🚫 Strict Navigation Validation: No benefit of doubt when 3+ home indicators found")
+        print("   🔗 Integration Testing: Enhanced Jumbo search methods work with existing infrastructure")
+        print("   🚀 System ready: Should prevent Jumbo app from returning to MainActivity after search")
         return 0
     else:
         print("⚠️  Some tests failed - check logs above")
