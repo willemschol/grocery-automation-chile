@@ -1339,7 +1339,7 @@ class MobileAppScraper:
             return {"error": str(e)}
     
     def save_page_source(self, filename: str = None):
-        """Save current page source for debugging"""
+        """Save current page source for debugging with Windows compatibility"""
         try:
             if not self.driver:
                 print("❌ No driver connected")
@@ -1347,8 +1347,10 @@ class MobileAppScraper:
             
             if not filename:
                 import datetime
+                import tempfile
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"/tmp/page_source_{timestamp}.xml"
+                temp_dir = tempfile.gettempdir()
+                filename = f"{temp_dir}/page_source_{timestamp}.xml"
             
             page_source = self.driver.page_source
             with open(filename, 'w', encoding='utf-8') as f:
