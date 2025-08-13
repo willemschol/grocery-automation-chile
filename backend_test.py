@@ -1733,10 +1733,10 @@ Leche,1L"""
             
             # Create mock related elements with multiple prices
             mock_related_elements = [
-                {'text': 'Coca Cola 350ml', 'x': 100, 'y': 100},
+                {'text': 'Coca Cola Original 350ml', 'x': 100, 'y': 100},  # Product name
                 {'text': '$3.990', 'x': 100, 'y': 120},  # First price
                 {'text': '$5.790', 'x': 100, 'y': 140},  # Second price
-                {'text': 'Ahorra $1.800', 'x': 100, 'y': 160},  # Third price
+                {'text': '1800', 'x': 100, 'y': 160},  # Third price (numeric)
                 {'text': '2 x $1.890', 'x': 100, 'y': 180},  # Fourth price (promotion)
             ]
             
