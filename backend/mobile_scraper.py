@@ -406,71 +406,159 @@ class MobileAppScraper:
             print(f"❌ Ultra-robust search error: {e}")
             return False
     
-    async def _perform_lider_search_anti_stale(self, product_name: str) -> bool:
-        """Anti-stale search method for Lider - find, click, clear, type, submit in rapid sequence"""
+    async def _perform_lider_search_ultra_robust(self, product_name: str) -> bool:
+        """Ultra-robust Lider search using real-time element discovery with WebDriverWait"""
         try:
-            print(f"🎯 Starting anti-stale Lider search for '{product_name}'")
+            print(f"🎯 Starting ULTRA-ROBUST Lider search for '{product_name}'")
             
-            # Step 1: Find all potential search elements
-            potential_elements = self.find_search_elements_debug()
+            # Define multiple search element strategies for Lider
+            search_strategies = [
+                ("🔄 Lider Attempt 1: Clickable EditText", "//android.widget.EditText[@clickable='true']"),
+                ("🔄 Lider Attempt 2: Search Input Resource ID", "//*[contains(@resource-id,'searchInput')]"),
+                ("🔄 Lider Attempt 3: Search Resource ID", "//*[contains(@resource-id,'search')]"),
+                ("🔄 Lider Attempt 4: Any EditText", "//android.widget.EditText"),
+                ("🔄 Lider Attempt 5: Text Field with Hint", "//*[contains(@hint,'Buscar') or contains(@hint,'Search')]")
+            ]
             
-            if not potential_elements:
-                print("❌ No potential search elements found")
-                return False
-            
-            # Step 2: Try each element with rapid interaction sequence
-            for i, elem_info in enumerate(potential_elements):
+            for attempt, (strategy_name, xpath_selector) in enumerate(search_strategies, 1):
                 try:
-                    print(f"🔄 Anti-stale attempt {i+1}: {elem_info['xpath']}")
+                    print(strategy_name)
                     
-                    # Rapid sequence: find → click → clear → type → submit
-                    # This minimizes time between operations to avoid stale references
+                    # Use WebDriverWait to find elements in real-time
+                    search_elements = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_all_elements_located((AppiumBy.XPATH, xpath_selector))
+                    )
                     
-                    # Find element
-                    search_element = self.driver.find_element(AppiumBy.XPATH, elem_info['xpath'])
+                    if not search_elements:
+                        print(f"   ❌ No {strategy_name} elements found")
+                        continue
                     
+                    print(f"   🎯 Trying Lider element 1/{len(search_elements)}")
+                    
+                    # Try first available element
+                    search_element = search_elements[0]
+                    
+                    # Check if element is usable
                     if not search_element.is_displayed() or not search_element.is_enabled():
-                        print(f"   ❌ Element not usable")
+                        print(f"   ❌ Lider element not usable")
                         continue
                     
-                    # Rapid interaction sequence
-                    search_element.click()  # Focus
-                    time.sleep(0.5)  # Minimal wait
-                    
-                    search_element.clear()  # Clear existing text
-                    time.sleep(0.5)
-                    
-                    search_element.send_keys(product_name)  # Type text
-                    time.sleep(1)
-                    
-                    # Verify text was entered
-                    current_text = search_element.get_attribute("text") or search_element.text or ""
-                    if product_name.lower() in current_text.lower():
-                        print(f"   ✅ Text verified: '{current_text}'")
+                    # Perform atomic search sequence with stale element handling
+                    try:
+                        print(f"   📝 Performing atomic Lider search sequence...")
                         
-                        # Submit immediately
+                        # Re-find element to ensure freshness
+                        fresh_element = WebDriverWait(self.driver, 2).until(
+                            EC.element_to_be_clickable((AppiumBy.XPATH, xpath_selector))
+                        )
+                        
+                        # Click to focus
+                        fresh_element.click()
+                        time.sleep(0.3)
+                        
+                        # Clear with error handling
                         try:
-                            self.driver.press_keycode(66)  # Enter key
-                            print(f"   🚀 Search submitted")
-                            time.sleep(3)  # Wait for navigation
-                            return await self._validate_lider_search_results()
-                        except:
-                            print(f"   ⚠️ Enter key failed, trying alternative submission")
-                            # Try alternative submission methods here if needed
-                            return False
-                    else:
-                        print(f"   ❌ Text verification failed")
+                            fresh_element.clear()
+                        except Exception as clear_error:
+                            print(f"   ⚠️ Clear failed, continuing...")
+                        
+                        # Send keys
+                        fresh_element.send_keys(product_name)
+                        time.sleep(0.5)
+                        
+                        # Verify text
+                        current_text = fresh_element.get_attribute("text") or fresh_element.text or ""
+                        if product_name.lower() in current_text.lower():
+                            print(f"   ✅ Lider text verified: '{current_text}'")
+                            
+                            # Submit with Enter key
+                            try:
+                                self.driver.press_keycode(66)  # Enter key
+                                print(f"   🚀 Lider search submitted")
+                                time.sleep(3)  # Wait for Lider results
+                                return True  # Lider doesn't need navigation validation like Jumbo
+                            
+                            except Exception as submit_error:
+                                print(f"   ⚠️ Lider submit failed: {submit_error}")
+                                continue
+                        else:
+                            print(f"   ❌ Lider text verification failed")
+                            continue
+                            
+                    except Exception as interaction_error:
+                        print(f"   ❌ Lider element {attempt} failed: {interaction_error}")
                         continue
                         
-                except Exception as e:
-                    print(f"   ❌ Anti-stale attempt {i+1} failed: {e}")
+                except Exception as strategy_error:
+                    print(f"   ❌ Lider strategy {attempt} failed: {strategy_error}")
                     continue
             
-            print("❌ All anti-stale attempts failed")
+            print("❌ All Lider search strategies failed")
             return False
             
         except Exception as e:
-            print(f"❌ Anti-stale search error: {e}")
+            print(f"❌ Lider ultra-robust search error: {e}")
+            return False
+
+    async def _validate_jumbo_navigation(self) -> bool:
+        """Enhanced Jumbo navigation validation to detect if we stayed on search results or returned to home"""
+        try:
+            print(f"🎯 Enhanced Jumbo navigation validation...")
+            
+            # Wait a moment for navigation to complete
+            time.sleep(2)
+            
+            # Check current activity
+            current_activity = self.driver.current_activity
+            print(f"   📱 Current activity: {current_activity}")
+            
+            # Get all text elements to analyze page content
+            text_elements = self.driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.TextView")
+            text_content = [elem.text for elem in text_elements if elem.text and elem.text.strip()]
+            
+            print(f"   📋 Page has {len(text_content)} text elements")
+            
+            # Check for home page indicators
+            home_indicators = [
+                "inicio", "home", "destacados", "ofertas", "categorías",
+                "mi cuenta", "carrito", "tiendas", "sucursales"
+            ]
+            
+            home_count = 0
+            for indicator in home_indicators:
+                for text in text_content:
+                    if indicator.lower() in text.lower():
+                        home_count += 1
+                        break
+            
+            # Check for search result indicators
+            search_indicators = [
+                "resultados", "productos", "encontrado", "filtrar",
+                "ordenar", "precio", "$", "agregar", "disponible"
+            ]
+            
+            search_count = 0
+            for indicator in search_indicators:
+                for text in text_content:
+                    if indicator.lower() in text.lower():
+                        search_count += 1
+                        break
+            
+            # Decision logic
+            if home_count >= 2:
+                print(f"   ❌ Found {home_count} home indicators - returned to home page")
+                return False
+            elif search_count >= 2:
+                print(f"   ✅ Found {search_count} search indicators - on search results page")
+                return True
+            else:
+                print(f"   ⚠️ Unclear navigation state - home:{home_count}, search:{search_count}")
+                # Save page source for debugging
+                self.save_page_source("jumbo_unclear_navigation.xml")
+                return False
+                
+        except Exception as e:
+            print(f"   ❌ Navigation validation error: {e}")
             return False
 
     
