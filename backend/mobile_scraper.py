@@ -77,8 +77,8 @@ class MobileAppScraper:
             # Launch Jumbo app
             await self._launch_and_setup_jumbo()
             
-            # Perform search using anti-stale method
-            if await self._perform_jumbo_search_anti_stale(product_name):
+            # Perform search using ultra-robust method
+            if await self._perform_jumbo_search_ultra_robust(product_name):
                 # Extract products using corrected method
                 products = await self._extract_jumbo_products()
                 print(f"✅ Jumbo search found {len(products)} products")
