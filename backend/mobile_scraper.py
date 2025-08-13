@@ -1087,8 +1087,8 @@ class MobileAppScraper:
                     
                     print(f"   📍 Found {len(related_elements)} related elements within Y-proximity")
                     
-                    # Extract product information from this group
-                    product_info = self._extract_product_from_group_corrected(related_elements, "Lider")
+                    # Extract product information from this group with the SPECIFIC price element
+                    product_info = self._extract_product_from_group_corrected(related_elements, "Lider", price_elem)
                     
                     if product_info:
                         products.append(product_info)
