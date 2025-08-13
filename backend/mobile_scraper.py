@@ -895,6 +895,18 @@ class MobileAppScraper:
             
             if not price_elements:
                 print("❌ No potential price elements found")
+                
+                # Take screenshot for debugging when no products found
+                try:
+                    import tempfile
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    screenshot_file = f"{tempfile.gettempdir()}/lider_no_products_{timestamp}.png"
+                    self.driver.save_screenshot(screenshot_file)
+                    print(f"📸 Screenshot saved for debugging: {screenshot_file}")
+                except Exception as screenshot_error:
+                    print(f"⚠️ Could not save screenshot: {screenshot_error}")
+                
                 return []
             
             # Group related elements by Y-coordinate proximity (within 200 pixels)
