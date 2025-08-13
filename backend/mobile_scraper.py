@@ -39,7 +39,7 @@ class MobileAppScraper:
             
             if app_package:
                 options.app_package = app_package
-                print(f"📱 Setting up driver for app package: {app_package}")
+                print(f"🚀 Setting up new driver for app: {app_package}")
                 
             # Additional capabilities for stability
             options.new_command_timeout = 300  # 5 minutes
@@ -49,7 +49,21 @@ class MobileAppScraper:
             self.driver = webdriver.Remote(f'http://localhost:{self.appium_port}', options=options)
             self.wait = WebDriverWait(self.driver, 15)
             
-            print("✅ Appium driver initialized successfully")
+            # Verify we have the correct app package active
+            actual_package = self.driver.current_package
+            print(f"✅ Driver initialized - Expected: {app_package}, Actual: {actual_package}")
+            
+            # If package doesn't match, try to activate the correct app
+            if app_package and actual_package != app_package:
+                print(f"⚠️ Package mismatch! Attempting to launch correct appp...")
+                try:
+                    self.driver.activate_app(app_package)
+                    time.sleep(2)
+                    actual_package = self.driver.current_package
+                    print(f"🔄 After activation - Actual package: {actual_package}")
+                except Exception as activation_error:
+                    print(f"⚠️ App activation failed: {activation_error}")
+            
             return True
             
         except Exception as e:
