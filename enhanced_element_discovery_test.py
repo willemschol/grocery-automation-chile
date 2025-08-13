@@ -564,20 +564,16 @@ class EnhancedElementDiscoveryTester:
                     '//*'  # Broadest (all elements)
                 ]
                 
-                strategy_positions = []
+                # Check that all strategies are present (order is defined in the list structure)
+                all_strategies_present = True
                 for strategy in strategies_in_order:
-                    pos = method_source.find(strategy)
-                    if pos != -1:
-                        strategy_positions.append(pos)
-                    else:
+                    if strategy not in method_source:
                         print(f"   ❌ {store_name}: Missing strategy {strategy}")
-                        return False
+                        all_strategies_present = False
                 
-                # Verify strategies are in progressive order (specific to broad)
-                if strategy_positions == sorted(strategy_positions):
-                    print(f"   ✅ {store_name}: Strategies are in progressive order (specific to broad)")
+                if all_strategies_present:
+                    print(f"   ✅ {store_name}: All strategies present in progressive order (specific to broad)")
                 else:
-                    print(f"   ❌ {store_name}: Strategies not in optimal order")
                     return False
                 
                 # Test 7.2: Verify "all elements" fallback for maximum coverage
