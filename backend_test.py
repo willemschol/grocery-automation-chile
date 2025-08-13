@@ -1929,13 +1929,13 @@ Leche,1L"""
             
             # Test 1: Verify XPath patterns are tried first
             xpath_patterns = [
-                "//android.widget.ImageView[contains(@content-desc,'search')]",
-                "//android.widget.ImageButton[contains(@content-desc,'search')]",
-                "//android.widget.Button[contains(@content-desc,'search')]",
-                "//*[contains(@resource-id,'search')]",
-                "//android.widget.SearchView",
-                "//*[contains(@content-desc,'buscar')]",
-                "//*[contains(@text,'buscar')]"
+                "//android.widget.ImageView[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                "//android.widget.ImageButton[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                "//*[contains(@resource-id,'search_button') or contains(@resource-id,'btn_search')]",
+                "//android.widget.Button[contains(@text,'Buscar') or contains(@text,'BUSCAR')]",
+                "//*[contains(@class,'SearchView')]//android.widget.ImageButton",
+                "//*[@content-desc='Search' or @content-desc='Buscar']",
+                "//android.widget.ImageView[@clickable='true'][contains(@bounds,'search')]"
             ]
             
             xpath_patterns_found = 0
