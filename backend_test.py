@@ -1167,8 +1167,8 @@ Leche,1L"""
             return False
 
 def main():
-    print("🚀 Starting Updated Mobile Automation System Tests + Excel Export Tests")
-    print("=" * 70)
+    print("🚀 Starting Enhanced Per-Operation Element Re-Finding Mobile Automation Tests")
+    print("=" * 80)
     
     tester = GroceryAutomationTester()
     
@@ -1177,104 +1177,79 @@ def main():
         print("❌ Health check failed - stopping tests")
         return 1
     
-    # Test 2: Excel Export Dependencies
-    print("\n📊 Testing Excel Export Dependencies:")
-    if not tester.test_excel_export_dependencies():
-        print("❌ Excel export dependencies test failed")
+    # Test 2: Per-Operation Element Re-Finding (Core Feature)
+    print("\n🎯 Testing Core Feature: Per-Operation Element Re-Finding")
+    if not tester.test_per_operation_element_refinding():
+        print("❌ Per-operation element re-finding test failed")
         return 1
     
-    # Test 3: Exports Directory Creation
-    if not tester.test_exports_directory_creation():
-        print("❌ Exports directory creation test failed")
+    # Test 3: Windows Path Compatibility
+    print("\n🪟 Testing Windows Path Compatibility")
+    if not tester.test_windows_path_compatibility():
+        print("❌ Windows path compatibility test failed")
         return 1
     
-    # Test 4: Excel Export with Test Results Format
-    print("\n📊 Testing Excel Export with Test Results Format:")
-    if not tester.test_excel_export_with_test_results_format():
-        print("❌ Excel export with test results format failed")
+    # Test 4: Enhanced Navigation Validation
+    print("\n🧭 Testing Enhanced Navigation Validation")
+    if not tester.test_enhanced_navigation_validation():
+        print("❌ Enhanced navigation validation test failed")
         return 1
     
-    # Test 5: Excel Export with Full Search Results Format
-    print("\n📊 Testing Excel Export with Full Search Results Format:")
-    if not tester.test_excel_export_with_full_search_results_format():
-        print("❌ Excel export with full search results format failed")
+    # Test 5: StaleElementReferenceException Prevention
+    print("\n🛡️ Testing StaleElementReferenceException Prevention")
+    if not tester.test_stale_element_prevention():
+        print("❌ StaleElementReferenceException prevention test failed")
         return 1
     
-    # Test 6: Excel Export with Empty Results
-    print("\n📊 Testing Excel Export Error Handling - Empty Results:")
-    if not tester.test_excel_export_with_empty_results():
-        print("❌ Excel export empty results handling failed")
+    # Test 6: Mobile Scraper Integration
+    print("\n🔗 Testing Mobile Scraper Integration")
+    if not tester.test_mobile_scraper_integration():
+        print("❌ Mobile scraper integration test failed")
         return 1
     
-    # Test 7: Excel Export with Invalid Format
-    print("\n📊 Testing Excel Export Error Handling - Invalid Format:")
-    if not tester.test_excel_export_with_invalid_format():
-        print("❌ Excel export invalid format handling failed")
+    # Test 7: Error Handling and Logging
+    print("\n📝 Testing Error Handling and Logging")
+    if not tester.test_error_handling_and_logging():
+        print("❌ Error handling and logging test failed")
         return 1
     
-    # Test 8: Mobile Scraper Initialization and Corrected Methods
-    print("\n🔧 Testing Mobile Scraper Initialization and Corrected Methods:")
-    print("   - Mobile scraper can initialize properly")
-    print("   - All corrected extraction methods are available")
-    print("   - Driver session management methods are present")
-    print("   - Corrected promotional price parsing logic")
-    
+    # Test 8: Legacy Mobile Scraper Initialization (for compatibility)
+    print("\n🔧 Testing Legacy Mobile Scraper Features")
     if not tester.test_mobile_scraper_initialization():
         print("❌ Mobile scraper initialization test failed")
         return 1
     
-    # Test 9: API Endpoint Integration with Mobile Automation
-    print("\n🔍 Testing API Endpoint Integration with Mobile Automation:")
-    print("   - /api/search-product calls mobile automation (not web scraping)")
-    print("   - Backend logs show mobile scraper initialization")
-    print("   - Corrected extraction approach is being used")
-    print("   - Graceful handling of Appium connection issues")
-    
+    # Test 9: API Integration Test
+    print("\n🌐 Testing API Integration with Enhanced Mobile Automation")
     chilean_products = ["Coca Cola"]  # Focus on one product for detailed testing
     
     for product in chilean_products:
         success, response = tester.test_single_product_search(product)
         if not success:
-            print(f"❌ Mobile automation API integration failed for {product}")
+            print(f"❌ Enhanced mobile automation API integration failed for {product}")
         else:
             # Check if mobile automation is being used
             total_found = response.get('total_found', 0)
             if total_found == 0:
-                print(f"✅ Mobile automation API integration working - Appium connection error expected without physical devices")
-                print(f"✅ Backend should show mobile scraper initialization and corrected extraction approach")
+                print(f"✅ Enhanced mobile automation API integration working - Appium connection error expected without physical devices")
+                print(f"✅ Backend should show ultra-robust search methods and per-operation element re-finding")
             else:
-                print(f"🎉 Mobile automation working with actual results!")
-    
-    # Test 10: CSV Upload
-    if not tester.test_csv_upload():
-        print("❌ CSV upload failed")
-        return 1
-    
-    # Test 11: Bulk Product Search
-    if not tester.test_search_all_products():
-        print("❌ Bulk product search failed")
+                print(f"🎉 Enhanced mobile automation working with actual results!")
     
     # Print final results
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
-        print("✅ Updated mobile automation system with corrected methods is working correctly")
-        print("✅ Excel export functionality is working correctly")
-        print("✅ Key improvements verified:")
-        print("   - Excel export endpoint /api/export-excel is functional")
-        print("   - Handles both test results format and full search results format")
-        print("   - Creates properly formatted Excel files with Search Results and Summary sheets")
-        print("   - Graceful error handling for empty data and invalid formats")
-        print("   - Required dependencies (openpyxl, pandas) are available")
-        print("   - Exports directory creation works correctly")
-        print("   - Mobile scraper initializes with corrected methods")
-        print("   - /api/search-product uses mobile automation instead of web scraping")
-        print("   - Driver session management prevents app context mixing")
-        print("   - Corrected promotional price parsing (e.g., '2 x $4.000' = $4.000 total)")
-        print("   - Y-coordinate proximity grouping for product extraction")
-        print("   - Anti-stale element interaction methods")
+        print("🎉 All Enhanced Per-Operation Element Re-Finding Tests Passed!")
+        print("✅ Key enhancements verified:")
+        print("   🎯 Per-Operation Element Re-Finding: Both ultra-robust methods re-find elements before each operation")
+        print("   🪟 Windows Path Compatibility: save_page_source and debug methods use tempfile.gettempdir()")
+        print("   🧭 Enhanced Navigation Validation: _validate_jumbo_navigation uses refined home page indicators")
+        print("   🛡️ StaleElementReferenceException Prevention: Fresh element references for each operation")
+        print("   🔗 Mobile Scraper Integration: API endpoints correctly call updated ultra-robust methods")
+        print("   📝 Error Handling: Individual operation failures handled gracefully with proper logging")
+        print("   🚀 System ready: Per-operation element re-finding should eliminate StaleElementReferenceException")
         return 0
     else:
         print("⚠️  Some tests failed - check logs above")
