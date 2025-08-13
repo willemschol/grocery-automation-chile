@@ -242,10 +242,12 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Mobile App Search Element Interaction"
+  stuck_tasks:
+    - "Mobile App Search Element Interaction"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "main"
