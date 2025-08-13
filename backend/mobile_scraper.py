@@ -404,13 +404,42 @@ class MobileAppScraper:
                             if product_name.lower() in current_text.lower():
                                 print(f"   ✅ Text verified: '{current_text}'")
                                 
-                                # Submit with Enter key
+                                # Submit with Enter key and enhanced validation
                                 try:
                                     self.driver.press_keycode(66)  # Enter key
                                     print(f"   🚀 Enter key pressed")
-                                    time.sleep(2)  # Wait for results
+                                    time.sleep(4)  # Longer wait for navigation
                                     
-                                    # Validate navigation
+                                    # Validate navigation immediately
+                                    activity_after_search = self.driver.current_activity
+                                    print(f"   📱 Activity after search: {activity_after_search}")
+                                    
+                                    # If still in MainActivity, try search button as alternative
+                                    if activity_after_search == ".features.main.activity.MainActivity":
+                                        print(f"   ⚠️ Still in MainActivity, trying search button...")
+                                        try:
+                                            # Look for search button to click
+                                            search_buttons = [
+                                                "//android.widget.Button[contains(@text,'Buscar')]",
+                                                "//*[contains(@content-desc,'search') or contains(@content-desc,'buscar')]", 
+                                                "//android.widget.ImageButton[contains(@content-desc,'search')]"
+                                            ]
+                                            
+                                            for button_xpath in search_buttons:
+                                                try:
+                                                    search_btn = WebDriverWait(self.driver, 2).until(
+                                                        EC.element_to_be_clickable((AppiumBy.XPATH, button_xpath))
+                                                    )
+                                                    search_btn.click()
+                                                    print(f"   ✅ Search button clicked")
+                                                    time.sleep(3)
+                                                    break
+                                                except:
+                                                    continue
+                                        except Exception as btn_error:
+                                            print(f"   ⚠️ Search button not found: {btn_error}")
+                                    
+                                    # Final validation
                                     return await self._validate_jumbo_navigation()
                                 
                                 except Exception as submit_error:
