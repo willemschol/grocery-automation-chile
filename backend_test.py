@@ -1871,10 +1871,10 @@ Leche,1L"""
             
             # Each price element should be processed individually
             unique_prices = set()
-            for price_elem in price_elements:
+            for i, price_elem in enumerate(price_elements):
                 # Create related elements for each price (simulating Y-coordinate proximity)
                 related_elements = [
-                    {'text': f'Product for {price_elem["text"]}', 'x': 100, 'y': price_elem['y']},
+                    {'text': f'Coca Cola Product {i+1}', 'x': 100, 'y': price_elem['y']},  # Product name with "coca" keyword
                     price_elem
                 ]
                 
@@ -1884,6 +1884,9 @@ Leche,1L"""
                 
                 if result:
                     unique_prices.add(result['price'])
+                    print(f"      ✅ Price element {i+1}: '{price_elem['text']}' → ${result['price']}")
+                else:
+                    print(f"      ❌ Price element {i+1}: '{price_elem['text']}' → No product extracted")
             
             if len(unique_prices) == len(price_elements):
                 print(f"   ✅ Individual price parsing works: {len(unique_prices)} unique prices from {len(price_elements)} price elements")
