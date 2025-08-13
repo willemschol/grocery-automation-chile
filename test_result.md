@@ -105,6 +105,18 @@
 user_problem_statement: "Build an automated supermarket purchase system that searches for products on Jumbo and Lider Android apps, compares prices, and adds cheaper options to carts. User reported specific issues: Jumbo app never opens properly, Lider app opens but stays on home screen with no search performed, and both apps throw 'Cannot set the element' errors when trying to input search text."
 
 backend:
+  - task: "Fixed Price Parsing Logic for Individual Price Elements"
+    implemented: true
+    working: true
+    file: "backend/mobile_scraper.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE FIXED PRICE PARSING LOGIC TESTING COMPLETE: ✅ All 7/7 comprehensive tests passed successfully for the fixed price parsing logic. ✅ SPECIFIC PRICE ELEMENT PARSING: _extract_product_from_group_corrected now accepts target_price_elem parameter and parses the SPECIFIC price element being processed instead of just the first price in the group. ✅ TARGET PRICE PROCESSING: When target_price_elem is provided, the method parses that specific price text (e.g., '$3.990', '$5.790', 'Ahorra $1.800', '2 x $1.890') instead of defaulting to the first price. ✅ FALLBACK LOGIC: If target price parsing fails, the system correctly falls back to processing price_candidates as before. ✅ ENHANCED LOGGING: System logs which specific price is being parsed for each element with detailed debugging output. ✅ REGRESSION PREVENTION: Both Jumbo and Lider extraction methods (_extract_jumbo_products, _extract_lider_products) now pass the target_price_elem parameter correctly. ✅ INTEGRATION TESTING: Mobile automation correctly calls the updated method signatures through search_jumbo_app and search_lider_app. ✅ INDIVIDUAL PRICE PARSING: Each price element ('$3.990', '$5.790', 'Ahorra $1.800', '2 x $1.890') is now parsed as its own individual price rather than all being parsed as the first price in the group, completely eliminating the duplicate product issue reported by the user. The fixed price parsing logic ensures that each price element produces different product entries with their correct respective prices."
+
   - task: "Excel Export Functionality"
     implemented: true
     working: true
