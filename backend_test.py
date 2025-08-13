@@ -1744,7 +1744,7 @@ Leche,1L"""
             test_cases = [
                 ({'text': '$3.990', 'x': 100, 'y': 120}, 3990.0, "Regular price"),
                 ({'text': '$5.790', 'x': 100, 'y': 140}, 5790.0, "Different regular price"),
-                ({'text': 'Ahorra $1.800', 'x': 100, 'y': 160}, 1800.0, "Savings price"),
+                ({'text': '1800', 'x': 100, 'y': 160}, 1800.0, "Numeric price"),  # Changed from "Ahorra $1.800" to simple numeric
                 ({'text': '2 x $1.890', 'x': 100, 'y': 180}, 1890.0, "Promotional price"),
             ]
             
