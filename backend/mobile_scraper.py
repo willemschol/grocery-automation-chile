@@ -833,8 +833,10 @@ class MobileAppScraper:
         try:
             print("📦 Starting corrected Lider product extraction with Y-coordinate proximity grouping...")
             
-            # Save page source for analysis
-            self.save_page_source(f"/tmp/lider_products_page.xml")
+            # Save page source for analysis with Windows-compatible path
+            import tempfile
+            debug_file = f"{tempfile.gettempdir()}/lider_products_page.xml"
+            self.save_page_source(debug_file)
             
             # Get all TextView elements that might contain product information
             all_text_elements = []
