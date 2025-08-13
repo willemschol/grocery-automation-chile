@@ -628,18 +628,49 @@ class MobileAppScraper:
             debug_file = f"{tempfile.gettempdir()}/jumbo_products_page.xml"
             self.save_page_source(debug_file)
             
-            # Get all TextView elements that might contain product information
+            # Get all TextView elements that might contain product information - ENHANCED DISCOVERY
             all_text_elements = []
             try:
-                text_views = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.TextView")
-                print(f"🔍 Found {len(text_views)} TextView elements total")
+                # Try multiple element discovery strategies
+                discovery_strategies = [
+                    ("android.widget.TextView", "Primary TextView discovery"),
+                    ("//*[@class='android.widget.TextView']", "XPath TextView discovery"),
+                    ("//*[contains(@class,'TextView')]", "Partial TextView class discovery"),
+                    ("//*", "All elements discovery")
+                ]
                 
-                for elem in text_views:
+                print(f"🔍 Trying multiple element discovery strategies...")
+                
+                for strategy, description in discovery_strategies:
+                    try:
+                        if strategy.startswith("//"):
+                            # XPath strategy
+                            elements = self.driver.find_elements(AppiumBy.XPATH, strategy)
+                        else:
+                            # Class name strategy
+                            elements = self.driver.find_elements(AppiumBy.CLASS_NAME, strategy)
+                        
+                        print(f"   📱 {description}: Found {len(elements)} elements")
+                        
+                        # Use the strategy that finds the most elements
+                        if len(elements) > len(all_text_elements):
+                            all_text_elements = elements
+                            print(f"   ✅ Using {description} (most elements found)")
+                        
+                    except Exception as e:
+                        print(f"   ⚠️ {description} failed: {e}")
+                        continue
+                
+                print(f"🔍 Final element count: {len(all_text_elements)} elements")
+                
+                # Process the elements to extract text and location info
+                processed_elements = []
+                for elem in all_text_elements:
                     try:
                         text = elem.text.strip() if elem.text else ""
                         if text and len(text) > 0:
                             location = elem.location
-                            all_text_elements.append({
+                            processed_elements.append({
                                 'element': elem,
                                 'text': text,
                                 'x': location['x'],
@@ -648,12 +679,13 @@ class MobileAppScraper:
                             })
                     except:
                         continue
-                        
+                
+                all_text_elements = processed_elements
                 print(f"📝 Extracted {len(all_text_elements)} valid text elements")
                 
             except Exception as e:
                 print(f"❌ Error finding text elements: {e}")
-                return []
+                return products
             
             if not all_text_elements:
                 print("❌ No text elements found")
