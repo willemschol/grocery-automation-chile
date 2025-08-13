@@ -105,8 +105,8 @@ class MobileAppScraper:
             # Launch Lider app
             await self._launch_and_setup_lider()
             
-            # Perform search using anti-stale method
-            if await self._perform_lider_search_anti_stale(product_name):
+            # Perform search using ultra-robust method
+            if await self._perform_lider_search_ultra_robust(product_name):
                 # Extract products using corrected method
                 products = await self._extract_lider_products()
                 print(f"✅ Lider search found {len(products)} products")
