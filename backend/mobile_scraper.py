@@ -404,7 +404,7 @@ class MobileAppScraper:
                             if product_name.lower() in current_text.lower():
                                 print(f"   ✅ Text verified: '{current_text}'")
                                 
-                                # Submit with Jumbo-specific search triggers
+                                # Submit with Jumbo-specific search triggers including coordinate-based tapping
                                 try:
                                     print(f"   🎯 Trying Jumbo-specific search submission methods...")
                                     
@@ -435,7 +435,43 @@ class MobileAppScraper:
                                             print(f"   ❌ Pattern {i} failed: search button not found")
                                             continue
                                     
-                                    # Method 2: If no search button, try alternative keycodes
+                                    # Method 2: Coordinate-based search button tapping (common Jumbo locations)
+                                    if not search_button_found:
+                                        print(f"   🎯 Trying coordinate-based search button tapping...")
+                                        
+                                        # Get screen size for relative positioning
+                                        screen_size = self.driver.get_window_size()
+                                        width = screen_size['width']
+                                        height = screen_size['height']
+                                        
+                                        # Common search icon locations in Jumbo app (relative to screen size)
+                                        search_coordinates = [
+                                            (int(width * 0.9), int(height * 0.1)),    # Top right corner
+                                            (int(width * 0.85), int(height * 0.08)),  # Top right area
+                                            (int(width * 0.9), int(height * 0.15)),   # Right side upper
+                                            (int(width * 0.95), int(height * 0.12)),  # Far right upper
+                                            (int(width * 0.88), int(height * 0.06)),  # Top right edge
+                                        ]
+                                        
+                                        for i, (x, y) in enumerate(search_coordinates, 1):
+                                            try:
+                                                print(f"   📍 Trying coordinate tap {i}: ({x}, {y})")
+                                                self.driver.tap([(x, y)])
+                                                time.sleep(2)
+                                                
+                                                # Check if we're still in MainActivity
+                                                activity_check = self.driver.current_activity
+                                                if activity_check != ".features.main.activity.MainActivity":
+                                                    print(f"   ✅ Coordinate tap {i} worked! New activity: {activity_check}")
+                                                    search_button_found = True
+                                                    break
+                                                else:
+                                                    print(f"   ❌ Coordinate tap {i} failed, still in MainActivity")
+                                            except Exception as tap_error:
+                                                print(f"   ❌ Coordinate tap {i} error: {tap_error}")
+                                                continue
+                                    
+                                    # Method 3: If no search button, try alternative keycodes
                                     if not search_button_found:
                                         print(f"   🎯 No search button found, trying alternative submission methods...")
                                         alternative_methods = [
@@ -462,7 +498,7 @@ class MobileAppScraper:
                                                 print(f"   ❌ {method_name} error: {key_error}")
                                                 continue
                                     
-                                    # Method 3: Final fallback - try Enter key as last resort
+                                    # Method 4: Final fallback - try Enter key as last resort
                                     if not search_button_found:
                                         print(f"   🎯 Final fallback: Enter key")
                                         self.driver.press_keycode(66)  # Enter key
