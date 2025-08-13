@@ -497,13 +497,35 @@ class MobileAppScraper:
                         except Exception as clear_error:
                             print(f"   ⚠️ Lider clear failed, continuing: {clear_error}")
                         
-                        # OPERATION 3: Send keys - Find fresh element again
+                        # OPERATION 3: Send keys - Find fresh element again with state validation
                         try:
                             type_element = WebDriverWait(self.driver, 3).until(
                                 EC.presence_of_element_located((AppiumBy.XPATH, xpath_selector))
                             )
-                            type_element.send_keys(product_name)
-                            print(f"   ✅ Lider text input successful")
+                            
+                            # Validate element state before typing
+                            if not type_element.is_enabled():
+                                print(f"   ⚠️ Lider element not enabled, trying to enable...")
+                                type_element.click()  # Try to enable/focus
+                                time.sleep(0.5)
+                            
+                            # Alternative text input methods for problematic elements
+                            try:
+                                type_element.send_keys(product_name)
+                                print(f"   ✅ Lider text input successful")
+                            except Exception as send_keys_error:
+                                print(f"   ⚠️ send_keys failed, trying set_value: {send_keys_error}")
+                                try:
+                                    type_element.set_value(product_name)
+                                    print(f"   ✅ Lider set_value successful")
+                                except Exception as set_value_error:
+                                    print(f"   ⚠️ set_value failed, trying character input: {set_value_error}")
+                                    # Character by character input as last resort
+                                    for char in product_name:
+                                        type_element.send_keys(char)
+                                        time.sleep(0.1)
+                                    print(f"   ✅ Lider character-by-character input successful")
+                            
                             time.sleep(0.5)
                         except Exception as type_error:
                             print(f"   ❌ Lider text input failed: {type_error}")
