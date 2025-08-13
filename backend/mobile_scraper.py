@@ -1271,7 +1271,7 @@ class MobileAppScraper:
             'detergente', 'jabón', 'shampoo', 'crema', 'galletas', 'chocolate'
         ]
         
-        # Higher priority if contains product keywords
+        # Higher priority if contains product keywords - this overrides generic text filtering
         for keyword in product_keywords:
             if keyword in text_lower:
                 return True
