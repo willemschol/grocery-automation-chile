@@ -1695,6 +1695,200 @@ Leche,1L"""
             print(f"❌ Error testing integration with mobile automation: {e}")
             return False
 
+    def test_fixed_price_parsing_logic(self):
+        """Test the fixed price parsing logic to ensure each price element is parsed correctly"""
+        print("\n🔍 Testing Fixed Price Parsing Logic...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported and initialized successfully")
+            
+            # Test 1: Verify _extract_product_from_group_corrected accepts target_price_elem parameter
+            print("   🔍 Testing target_price_elem parameter acceptance...")
+            
+            method = getattr(mobile_scraper, '_extract_product_from_group_corrected')
+            method_signature = inspect.signature(method)
+            
+            if 'target_price_elem' in method_signature.parameters:
+                print("   ✅ _extract_product_from_group_corrected accepts target_price_elem parameter")
+                
+                # Check if it's optional (has default value)
+                param = method_signature.parameters['target_price_elem']
+                if param.default is not None or param.default == inspect.Parameter.empty:
+                    print("   ✅ target_price_elem parameter is optional with default value")
+                else:
+                    print("   ❌ target_price_elem parameter should be optional")
+                    return False
+            else:
+                print("   ❌ _extract_product_from_group_corrected missing target_price_elem parameter")
+                return False
+            
+            # Test 2: Test specific price element parsing
+            print("   🔍 Testing specific price element parsing...")
+            
+            # Create mock related elements with multiple prices
+            mock_related_elements = [
+                {'text': 'Coca Cola 350ml', 'x': 100, 'y': 100},
+                {'text': '$3.990', 'x': 100, 'y': 120},  # First price
+                {'text': '$5.790', 'x': 100, 'y': 140},  # Second price
+                {'text': 'Ahorra $1.800', 'x': 100, 'y': 160},  # Third price
+                {'text': '2 x $1.890', 'x': 100, 'y': 180},  # Fourth price (promotion)
+            ]
+            
+            # Test parsing each specific price element
+            test_cases = [
+                ({'text': '$3.990', 'x': 100, 'y': 120}, 3990.0, "Regular price"),
+                ({'text': '$5.790', 'x': 100, 'y': 140}, 5790.0, "Different regular price"),
+                ({'text': 'Ahorra $1.800', 'x': 100, 'y': 160}, 1800.0, "Savings price"),
+                ({'text': '2 x $1.890', 'x': 100, 'y': 180}, 1890.0, "Promotional price"),
+            ]
+            
+            for target_price_elem, expected_price, description in test_cases:
+                try:
+                    result = mobile_scraper._extract_product_from_group_corrected(
+                        mock_related_elements, "Test Store", target_price_elem
+                    )
+                    
+                    if result and result.get('price') == expected_price:
+                        print(f"   ✅ {description}: Correctly parsed '{target_price_elem['text']}' as ${expected_price}")
+                    else:
+                        actual_price = result.get('price') if result else 0
+                        print(f"   ❌ {description}: Expected ${expected_price}, got ${actual_price}")
+                        return False
+                        
+                except Exception as e:
+                    print(f"   ❌ Error parsing {description}: {e}")
+                    return False
+            
+            # Test 3: Test fallback logic when target price parsing fails
+            print("   🔍 Testing fallback logic...")
+            
+            # Create a target price element with invalid price
+            invalid_target_price = {'text': 'Invalid Price Text', 'x': 100, 'y': 120}
+            
+            result = mobile_scraper._extract_product_from_group_corrected(
+                mock_related_elements, "Test Store", invalid_target_price
+            )
+            
+            if result and result.get('price') > 0:
+                print(f"   ✅ Fallback logic works: Used fallback price ${result.get('price')} when target price parsing failed")
+            else:
+                print("   ❌ Fallback logic failed: Should use price_candidates when target price parsing fails")
+                return False
+            
+            # Test 4: Test enhanced logging for specific price parsing
+            print("   🔍 Testing enhanced logging...")
+            
+            method_source = inspect.getsource(method)
+            
+            # Check for logging of specific price being parsed
+            logging_patterns = [
+                'Parsing price:',
+                'target_price_text',
+                'Fallback parsing price:'
+            ]
+            
+            logging_found = 0
+            for pattern in logging_patterns:
+                if pattern in method_source:
+                    logging_found += 1
+                    print(f"   ✅ Enhanced logging found: {pattern}")
+            
+            if logging_found >= 2:
+                print("   ✅ Enhanced logging is adequate for price parsing")
+            else:
+                print("   ❌ Insufficient enhanced logging for price parsing")
+                return False
+            
+            # Test 5: Verify both Jumbo and Lider extraction methods pass target_price_elem
+            print("   🔍 Testing Jumbo and Lider method integration...")
+            
+            extraction_methods = [
+                ('_extract_jumbo_products', 'Jumbo'),
+                ('_extract_lider_products', 'Lider')
+            ]
+            
+            for method_name, store_name in extraction_methods:
+                if hasattr(mobile_scraper, method_name):
+                    method = getattr(mobile_scraper, method_name)
+                    method_source = inspect.getsource(method)
+                    
+                    # Check if the method calls _extract_product_from_group_corrected with price_elem
+                    if '_extract_product_from_group_corrected(related_elements, "' + store_name + '", price_elem)' in method_source:
+                        print(f"   ✅ {method_name} correctly passes target_price_elem parameter")
+                    else:
+                        print(f"   ❌ {method_name} does not pass target_price_elem parameter correctly")
+                        return False
+                else:
+                    print(f"   ❌ Method {method_name} not found")
+                    return False
+            
+            # Test 6: Integration testing with mobile automation
+            print("   🔍 Testing mobile automation integration...")
+            
+            # Verify that the search methods use the updated extraction methods
+            search_methods = ['search_jumbo_app', 'search_lider_app']
+            
+            for search_method_name in search_methods:
+                if hasattr(mobile_scraper, search_method_name):
+                    search_method = getattr(mobile_scraper, search_method_name)
+                    search_source = inspect.getsource(search_method)
+                    
+                    # Check if it calls the corrected extraction methods
+                    if '_extract_jumbo_products' in search_source or '_extract_lider_products' in search_source:
+                        print(f"   ✅ {search_method_name} uses corrected extraction methods")
+                    else:
+                        print(f"   ❌ {search_method_name} does not use corrected extraction methods")
+                        return False
+                else:
+                    print(f"   ❌ Search method {search_method_name} not found")
+                    return False
+            
+            # Test 7: Test individual price parsing to prevent duplicate products
+            print("   🔍 Testing individual price parsing to prevent duplicates...")
+            
+            # Simulate multiple price elements that should produce different products
+            price_elements = [
+                {'text': '$3.990', 'x': 100, 'y': 100},
+                {'text': '$5.790', 'x': 100, 'y': 300},  # Different Y coordinate (different product)
+                {'text': 'Ahorra $1.800', 'x': 100, 'y': 500},  # Different Y coordinate (different product)
+                {'text': '2 x $1.890', 'x': 100, 'y': 700},  # Different Y coordinate (different product)
+            ]
+            
+            # Each price element should be processed individually
+            unique_prices = set()
+            for price_elem in price_elements:
+                # Create related elements for each price (simulating Y-coordinate proximity)
+                related_elements = [
+                    {'text': f'Product for {price_elem["text"]}', 'x': 100, 'y': price_elem['y']},
+                    price_elem
+                ]
+                
+                result = mobile_scraper._extract_product_from_group_corrected(
+                    related_elements, "Test Store", price_elem
+                )
+                
+                if result:
+                    unique_prices.add(result['price'])
+            
+            if len(unique_prices) == len(price_elements):
+                print(f"   ✅ Individual price parsing works: {len(unique_prices)} unique prices from {len(price_elements)} price elements")
+            else:
+                print(f"   ❌ Individual price parsing failed: Only {len(unique_prices)} unique prices from {len(price_elements)} price elements")
+                return False
+            
+            print("✅ Fixed price parsing logic test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing fixed price parsing logic: {e}")
+            return False
+
 def main():
     print("🚀 Starting Jumbo-Specific Search Submission and Strict Navigation Validation Tests")
     print("=" * 80)
