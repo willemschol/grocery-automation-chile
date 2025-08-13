@@ -2,10 +2,12 @@ import requests
 import sys
 import json
 import io
+import tempfile
+import os
 from datetime import datetime
 
 class GroceryAutomationTester:
-    def __init__(self, base_url="https://shopcart-genius.preview.emergentagent.com"):
+    def __init__(self, base_url="https://2fba086a-2368-4eba-9e38-248b6437d466.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
