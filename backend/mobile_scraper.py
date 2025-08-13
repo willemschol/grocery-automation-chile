@@ -1218,8 +1218,11 @@ class MobileAppScraper:
                         print(f"     🔍 Fallback parsing price: '{price_candidate}'")
                         break
             
-            # Extract the best product name
-            product_name = self._extract_product_name_and_size_corrected(name_candidates, size_candidates)
+            # Extract the best product name from this SPECIFIC group (not all candidates)
+            group_name_candidates = [elem['text'] for elem in related_elements if self._looks_like_product_name(elem['text'])]
+            group_size_candidates = [elem['text'] for elem in related_elements if self._looks_like_size(elem['text'])]
+            
+            product_name = self._extract_product_name_and_size_corrected(group_name_candidates, group_size_candidates)
             
             if price_value > 0 and product_name and product_name != "Unknown Product":
                 product_info = {
@@ -1232,8 +1235,8 @@ class MobileAppScraper:
                 }
                 
                 # Calculate price per unit if size information is available
-                if size_candidates:
-                    unit_info = self._calculate_price_per_unit(price_value, size_candidates, promotion_info)
+                if group_size_candidates:
+                    unit_info = self._calculate_price_per_unit(price_value, group_size_candidates, promotion_info)
                     if unit_info:
                         product_info.update(unit_info)
                 
