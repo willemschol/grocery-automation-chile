@@ -1890,7 +1890,7 @@ Leche,1L"""
             return False
 
 def main():
-    print("🚀 Starting Jumbo-Specific Search Submission and Strict Navigation Validation Tests")
+    print("🚀 Starting Fixed Price Parsing Logic Tests")
     print("=" * 80)
     
     tester = GroceryAutomationTester()
@@ -1900,73 +1900,80 @@ def main():
         print("❌ Health check failed - stopping tests")
         return 1
     
-    # Test 2: Jumbo-Specific Search Methods
+    # Test 2: Fixed Price Parsing Logic (PRIMARY FOCUS)
+    print("\n🎯 Testing Fixed Price Parsing Logic (PRIMARY FOCUS)")
+    if not tester.test_fixed_price_parsing_logic():
+        print("❌ Fixed price parsing logic test failed")
+        return 1
+    
+    # Test 3: Jumbo-Specific Search Methods
     print("\n🎯 Testing Jumbo-Specific Search Methods (7 patterns)")
     if not tester.test_jumbo_specific_search_methods():
         print("❌ Jumbo-specific search methods test failed")
         return 1
     
-    # Test 3: Alternative Keycode Methods
+    # Test 4: Alternative Keycode Methods
     print("\n🔑 Testing Alternative Keycode Methods")
     if not tester.test_alternative_keycode_methods():
         print("❌ Alternative keycode methods test failed")
         return 1
     
-    # Test 4: Activity Monitoring
+    # Test 5: Activity Monitoring
     print("\n📱 Testing Activity Monitoring")
     if not tester.test_activity_monitoring():
         print("❌ Activity monitoring test failed")
         return 1
     
-    # Test 5: Strict Navigation Validation
+    # Test 6: Strict Navigation Validation
     print("\n🚫 Testing Strict Navigation Validation (No Benefit of Doubt)")
     if not tester.test_strict_navigation_validation():
         print("❌ Strict navigation validation test failed")
         return 1
     
-    # Test 6: Integration Testing
+    # Test 7: Integration Testing
     print("\n🔗 Testing Integration with Mobile Automation Infrastructure")
     if not tester.test_integration_with_mobile_automation():
         print("❌ Integration with mobile automation test failed")
         return 1
     
-    # Test 7: Legacy Mobile Scraper Initialization (for compatibility)
+    # Test 8: Legacy Mobile Scraper Initialization (for compatibility)
     print("\n🔧 Testing Legacy Mobile Scraper Features")
     if not tester.test_mobile_scraper_initialization():
         print("❌ Mobile scraper initialization test failed")
         return 1
     
-    # Test 8: API Integration Test
-    print("\n🌐 Testing API Integration with Enhanced Jumbo Search")
+    # Test 9: API Integration Test
+    print("\n🌐 Testing API Integration with Fixed Price Parsing")
     chilean_products = ["Coca Cola"]  # Focus on one product for detailed testing
     
     for product in chilean_products:
         success, response = tester.test_single_product_search(product)
         if not success:
-            print(f"❌ Enhanced Jumbo search API integration failed for {product}")
+            print(f"❌ Fixed price parsing API integration failed for {product}")
         else:
             # Check if mobile automation is being used
             total_found = response.get('total_found', 0)
             if total_found == 0:
-                print(f"✅ Enhanced Jumbo search API integration working - Appium connection error expected without physical devices")
-                print(f"✅ Backend should show Jumbo-specific search methods and strict navigation validation")
+                print(f"✅ Fixed price parsing API integration working - Appium connection error expected without physical devices")
+                print(f"✅ Backend should show individual price element parsing instead of duplicate products")
             else:
-                print(f"🎉 Enhanced Jumbo search working with actual results!")
+                print(f"🎉 Fixed price parsing working with actual results!")
     
     # Print final results
     print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All Jumbo-Specific Search Submission and Strict Navigation Validation Tests Passed!")
+        print("🎉 All Fixed Price Parsing Logic Tests Passed!")
         print("✅ Key features verified:")
-        print("   🎯 Jumbo-Specific Search Methods: 7 different search button patterns implemented")
-        print("   🔍 Search Button Detection: Multiple XPath patterns with proper logging")
-        print("   🔑 Alternative Keycode Methods: KEYCODE_SEARCH, KEYCODE_DPAD_CENTER, KEYCODE_TAB fallbacks")
-        print("   📱 Activity Monitoring: Proper activity change detection after each submission method")
-        print("   🚫 Strict Navigation Validation: No benefit of doubt when 3+ home indicators found")
-        print("   🔗 Integration Testing: Enhanced Jumbo search methods work with existing infrastructure")
-        print("   🚀 System ready: Should prevent Jumbo app from returning to MainActivity after search")
+        print("   🎯 Specific Price Element Parsing: _extract_product_from_group_corrected accepts target_price_elem parameter")
+        print("   🔍 Target Price Processing: Method parses SPECIFIC price element instead of first price in group")
+        print("   🔄 Fallback Logic: System falls back to price_candidates when target price parsing fails")
+        print("   📝 Enhanced Logging: System logs which specific price is being parsed for each element")
+        print("   🔗 Regression Prevention: Both Jumbo and Lider extraction methods pass target_price_elem parameter")
+        print("   🚀 Integration Testing: Mobile automation correctly calls updated method signatures")
+        print("   💰 Individual Price Parsing: Each price element ('$3.990', '$5.790', 'Ahorra $1.800', '2 x $1.890')")
+        print("      is now parsed as its own individual price, eliminating duplicate product issue")
         return 0
     else:
         print("⚠️  Some tests failed - check logs above")
