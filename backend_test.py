@@ -1966,9 +1966,9 @@ Leche,1L"""
             
             # Test 4: Verify alternative keycodes are implemented
             alternative_keycodes = [
-                "self.driver.press_keycode(84)",  # KEYCODE_SEARCH
-                "self.driver.press_keycode(23)",  # KEYCODE_DPAD_CENTER
-                "self.driver.press_keycode(61)"   # KEYCODE_TAB
+                "84, \"KEYCODE_SEARCH\"",      # KEYCODE_SEARCH
+                "23, \"KEYCODE_DPAD_CENTER\"", # KEYCODE_DPAD_CENTER
+                "61, \"KEYCODE_TAB\""          # KEYCODE_TAB
             ]
             
             keycodes_found = 0
