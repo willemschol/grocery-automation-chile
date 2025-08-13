@@ -1410,7 +1410,7 @@ Leche,1L"""
                 return False
             
             # Test 4: Verify fallback logic when search buttons fail
-            if 'If no search button, try alternative submission methods' in jumbo_source:
+            if 'If no search button, try alternative keycodes' in jumbo_source:
                 print("   ✅ Fallback logic documentation found")
             else:
                 print("   ❌ Fallback logic documentation not found")
