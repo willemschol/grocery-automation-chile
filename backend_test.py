@@ -1866,10 +1866,10 @@ Leche,1L"""
             
             # Test 4: Verify 5 different coordinate locations
             coordinate_patterns = [
-                "int(width * 0.90), int(height * 0.06)",  # Top right
-                "int(width * 0.85), int(height * 0.08)",  # Slightly left
-                "int(width * 0.92), int(height * 0.10)",  # Lower right
-                "int(width * 0.80), int(height * 0.06)",  # More left
+                "int(width * 0.9), int(height * 0.1)",    # Top right corner
+                "int(width * 0.85), int(height * 0.08)",  # Top right area
+                "int(width * 0.9), int(height * 0.15)",   # Right side upper
+                "int(width * 0.95), int(height * 0.12)",  # Far right upper
                 "int(width * 0.88), int(height * 0.06)"   # Top right edge
             ]
             
