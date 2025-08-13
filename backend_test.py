@@ -1695,6 +1695,432 @@ Leche,1L"""
             print(f"❌ Error testing integration with mobile automation: {e}")
             return False
 
+    def test_lider_name_selection_fix(self):
+        """Test that Lider name selection uses group_name_candidates instead of all name_candidates"""
+        print("\n🔍 Testing Lider Name Selection Fix...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify _extract_product_from_group_corrected method exists
+            if not hasattr(mobile_scraper, '_extract_product_from_group_corrected'):
+                print("   ❌ _extract_product_from_group_corrected method not found")
+                return False
+            
+            method = getattr(mobile_scraper, '_extract_product_from_group_corrected')
+            method_source = inspect.getsource(method)
+            
+            # Test 2: Verify method uses group_name_candidates from specific related_elements
+            if "group_name_candidates = [elem['text'] for elem in related_elements" in method_source:
+                print("   ✅ Method creates group_name_candidates from specific related_elements")
+            else:
+                print("   ❌ Method does not create group_name_candidates from related_elements")
+                return False
+            
+            # Test 3: Verify method passes group_name_candidates to name extraction
+            if "_extract_product_name_and_size_corrected(group_name_candidates" in method_source:
+                print("   ✅ Method passes group_name_candidates to name extraction")
+            else:
+                print("   ❌ Method does not pass group_name_candidates to name extraction")
+                return False
+            
+            # Test 4: Verify method also creates group_size_candidates from specific group
+            if "group_size_candidates = [elem['text'] for elem in related_elements" in method_source:
+                print("   ✅ Method creates group_size_candidates from specific related_elements")
+            else:
+                print("   ❌ Method does not create group_size_candidates from related_elements")
+                return False
+            
+            # Test 5: Verify method accepts target_price_elem parameter for specific price parsing
+            if "target_price_elem: Dict = None" in method_source:
+                print("   ✅ Method accepts target_price_elem parameter for specific price parsing")
+            else:
+                print("   ❌ Method does not accept target_price_elem parameter")
+                return False
+            
+            # Test 6: Verify method uses target_price_elem when provided
+            if "if target_price_elem and target_price_elem['text']:" in method_source:
+                print("   ✅ Method uses target_price_elem when provided")
+            else:
+                print("   ❌ Method does not use target_price_elem when provided")
+                return False
+            
+            print("✅ Lider name selection fix test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing Lider name selection fix: {e}")
+            return False
+
+    def test_group_specific_name_extraction(self):
+        """Test that each price element group extracts names only from Y-coordinate proximity area"""
+        print("\n🔍 Testing Group-Specific Name Extraction...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test both Jumbo and Lider extraction methods
+            extraction_methods = [
+                ('_extract_jumbo_products', 'Jumbo'),
+                ('_extract_lider_products', 'Lider')
+            ]
+            
+            for method_name, store_name in extraction_methods:
+                print(f"   🔍 Testing {store_name} group-specific extraction...")
+                
+                if not hasattr(mobile_scraper, method_name):
+                    print(f"   ❌ {method_name} method not found")
+                    return False
+                
+                method = getattr(mobile_scraper, method_name)
+                method_source = inspect.getsource(method)
+                
+                # Test 1: Verify Y-coordinate proximity grouping (within 200 pixels)
+                if "abs(text_elem['y'] - price_y) <= 200" in method_source:
+                    print(f"   ✅ {store_name}: Uses Y-coordinate proximity grouping (200 pixels)")
+                else:
+                    print(f"   ❌ {store_name}: Does not use Y-coordinate proximity grouping")
+                    return False
+                
+                # Test 2: Verify related_elements are found for each price element
+                if "related_elements = []" in method_source and "price_y = price_elem['y']" in method_source:
+                    print(f"   ✅ {store_name}: Creates related_elements for each price element")
+                else:
+                    print(f"   ❌ {store_name}: Does not create related_elements for each price element")
+                    return False
+                
+                # Test 3: Verify specific price element is passed to extraction method
+                if "_extract_product_from_group_corrected(related_elements, " in method_source and "price_elem)" in method_source:
+                    print(f"   ✅ {store_name}: Passes specific price element to extraction method")
+                else:
+                    print(f"   ❌ {store_name}: Does not pass specific price element to extraction method")
+                    return False
+                
+                # Test 4: Verify proximity logging
+                if "Found {len(related_elements)} related elements within Y-proximity" in method_source:
+                    print(f"   ✅ {store_name}: Logs proximity-based element grouping")
+                else:
+                    print(f"   ❌ {store_name}: Does not log proximity-based element grouping")
+                    return False
+            
+            print("✅ Group-specific name extraction test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing group-specific name extraction: {e}")
+            return False
+
+    def test_jumbo_coordinate_based_search(self):
+        """Test that Jumbo coordinate tapping method tries 5 different screen locations"""
+        print("\n🔍 Testing Jumbo Coordinate-Based Search...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test Jumbo ultra-robust search method
+            if not hasattr(mobile_scraper, '_perform_jumbo_search_ultra_robust'):
+                print("   ❌ _perform_jumbo_search_ultra_robust method not found")
+                return False
+            
+            method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            method_source = inspect.getsource(method)
+            
+            # Test 1: Verify coordinate-based search button tapping is implemented
+            if "coordinate-based search button tapping" in method_source:
+                print("   ✅ Coordinate-based search button tapping implemented")
+            else:
+                print("   ❌ Coordinate-based search button tapping not implemented")
+                return False
+            
+            # Test 2: Verify screen size detection
+            if "screen_size = self.driver.get_window_size()" in method_source:
+                print("   ✅ Screen size detection implemented")
+            else:
+                print("   ❌ Screen size detection not implemented")
+                return False
+            
+            # Test 3: Verify relative positioning calculations
+            if "width = screen_size['width']" in method_source and "height = screen_size['height']" in method_source:
+                print("   ✅ Screen dimensions extracted for relative positioning")
+            else:
+                print("   ❌ Screen dimensions not extracted for relative positioning")
+                return False
+            
+            # Test 4: Verify 5 different coordinate locations
+            coordinate_patterns = [
+                "int(width * 0.90), int(height * 0.06)",  # Top right
+                "int(width * 0.85), int(height * 0.08)",  # Slightly left
+                "int(width * 0.92), int(height * 0.10)",  # Lower right
+                "int(width * 0.80), int(height * 0.06)",  # More left
+                "int(width * 0.88), int(height * 0.06)"   # Top right edge
+            ]
+            
+            coordinates_found = 0
+            for pattern in coordinate_patterns:
+                if pattern in method_source:
+                    coordinates_found += 1
+                    print(f"   ✅ Coordinate location found: {pattern}")
+            
+            if coordinates_found >= 5:
+                print(f"   ✅ Found {coordinates_found} coordinate locations (≥5 required)")
+            else:
+                print(f"   ❌ Only found {coordinates_found} coordinate locations (5 required)")
+                return False
+            
+            # Test 5: Verify coordinate tapping with activity checking
+            if "self.driver.tap([(x, y)])" in method_source:
+                print("   ✅ Coordinate tapping implemented")
+            else:
+                print("   ❌ Coordinate tapping not implemented")
+                return False
+            
+            # Test 6: Verify activity change detection after coordinate tap
+            if "activity_check = self.driver.current_activity" in method_source:
+                print("   ✅ Activity change detection after coordinate tap")
+            else:
+                print("   ❌ Activity change detection not implemented")
+                return False
+            
+            print("✅ Jumbo coordinate-based search test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing Jumbo coordinate-based search: {e}")
+            return False
+
+    def test_enhanced_jumbo_search_flow(self):
+        """Test that Jumbo search flow follows: XPath patterns → coordinate tapping → alternative keycodes → Enter key fallback"""
+        print("\n🔍 Testing Enhanced Jumbo Search Flow...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test Jumbo ultra-robust search method
+            if not hasattr(mobile_scraper, '_perform_jumbo_search_ultra_robust'):
+                print("   ❌ _perform_jumbo_search_ultra_robust method not found")
+                return False
+            
+            method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            method_source = inspect.getsource(method)
+            
+            # Test 1: Verify XPath patterns are tried first
+            xpath_patterns = [
+                "//android.widget.ImageView[contains(@content-desc,'search')]",
+                "//android.widget.ImageButton[contains(@content-desc,'search')]",
+                "//android.widget.Button[contains(@content-desc,'search')]",
+                "//*[contains(@resource-id,'search')]",
+                "//android.widget.SearchView",
+                "//*[contains(@content-desc,'buscar')]",
+                "//*[contains(@text,'buscar')]"
+            ]
+            
+            xpath_patterns_found = 0
+            for pattern in xpath_patterns:
+                if pattern in method_source:
+                    xpath_patterns_found += 1
+                    print(f"   ✅ XPath pattern found: {pattern}")
+            
+            if xpath_patterns_found >= 5:
+                print(f"   ✅ Found {xpath_patterns_found} XPath patterns (≥5 required)")
+            else:
+                print(f"   ❌ Only found {xpath_patterns_found} XPath patterns (5+ required)")
+                return False
+            
+            # Test 2: Verify coordinate tapping comes after XPath patterns
+            if "# Method 2: Coordinate-based search button tapping" in method_source:
+                print("   ✅ Coordinate tapping is Method 2 (after XPath patterns)")
+            else:
+                print("   ❌ Coordinate tapping not properly sequenced")
+                return False
+            
+            # Test 3: Verify alternative keycodes come after coordinate tapping
+            if "# Method 3: If no search button, try alternative submission methods" in method_source:
+                print("   ✅ Alternative keycodes is Method 3 (after coordinate tapping)")
+            else:
+                print("   ❌ Alternative keycodes not properly sequenced")
+                return False
+            
+            # Test 4: Verify alternative keycodes are implemented
+            alternative_keycodes = [
+                "self.driver.press_keycode(84)",  # KEYCODE_SEARCH
+                "self.driver.press_keycode(23)",  # KEYCODE_DPAD_CENTER
+                "self.driver.press_keycode(61)"   # KEYCODE_TAB
+            ]
+            
+            keycodes_found = 0
+            for keycode in alternative_keycodes:
+                if keycode in method_source:
+                    keycodes_found += 1
+                    print(f"   ✅ Alternative keycode found: {keycode}")
+            
+            if keycodes_found >= 3:
+                print(f"   ✅ Found {keycodes_found} alternative keycodes")
+            else:
+                print(f"   ❌ Only found {keycodes_found} alternative keycodes (3 required)")
+                return False
+            
+            # Test 5: Verify Enter key fallback
+            if "self.driver.press_keycode(66)" in method_source:  # KEYCODE_ENTER
+                print("   ✅ Enter key fallback implemented")
+            else:
+                print("   ❌ Enter key fallback not implemented")
+                return False
+            
+            # Test 6: Verify search flow logic with proper fallback sequence
+            if "search_button_found" in method_source:
+                print("   ✅ Search flow uses search_button_found flag for proper fallback")
+            else:
+                print("   ❌ Search flow does not use proper fallback logic")
+                return False
+            
+            print("✅ Enhanced Jumbo search flow test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing enhanced Jumbo search flow: {e}")
+            return False
+
+    def test_integration_fixes_compatibility(self):
+        """Test that both Lider name selection and Jumbo coordinate search fixes work together"""
+        print("\n🔍 Testing Integration of Fixes Compatibility...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify both main search methods exist and call their respective ultra-robust methods
+            search_methods = [
+                ('search_jumbo_app', '_perform_jumbo_search_ultra_robust'),
+                ('search_lider_app', '_perform_lider_search_ultra_robust')
+            ]
+            
+            for main_method, ultra_method in search_methods:
+                if not hasattr(mobile_scraper, main_method):
+                    print(f"   ❌ {main_method} method not found")
+                    return False
+                
+                method = getattr(mobile_scraper, main_method)
+                method_source = inspect.getsource(method)
+                
+                if ultra_method in method_source:
+                    print(f"   ✅ {main_method} calls {ultra_method}")
+                else:
+                    print(f"   ❌ {main_method} does not call {ultra_method}")
+                    return False
+            
+            # Test 2: Verify both extraction methods use the corrected approach
+            extraction_methods = [
+                ('_extract_jumbo_products', 'Jumbo'),
+                ('_extract_lider_products', 'Lider')
+            ]
+            
+            for method_name, store_name in extraction_methods:
+                method = getattr(mobile_scraper, method_name)
+                method_source = inspect.getsource(method)
+                
+                # Check for corrected extraction method call
+                if "_extract_product_from_group_corrected" in method_source:
+                    print(f"   ✅ {store_name} uses corrected extraction method")
+                else:
+                    print(f"   ❌ {store_name} does not use corrected extraction method")
+                    return False
+                
+                # Check for Y-coordinate proximity grouping
+                if "abs(text_elem['y'] - price_y) <= 200" in method_source:
+                    print(f"   ✅ {store_name} uses Y-coordinate proximity grouping")
+                else:
+                    print(f"   ❌ {store_name} does not use Y-coordinate proximity grouping")
+                    return False
+            
+            # Test 3: Verify API integration works with both fixes
+            print("   🔍 Testing API integration with both fixes...")
+            
+            success, response = self.run_test(
+                "Integration API Test",
+                "POST",
+                "api/search-product",
+                200,
+                data={"product_name": "Coca Cola"}
+            )
+            
+            if success:
+                print("   ✅ API integration works with both fixes")
+                
+                # Check response structure
+                if 'jumbo_results' in response and 'lider_results' in response:
+                    print("   ✅ Both Jumbo and Lider results returned")
+                else:
+                    print("   ❌ Missing Jumbo or Lider results in response")
+                    return False
+                
+                if 'total_found' in response:
+                    print(f"   ✅ Total found: {response.get('total_found', 0)} products")
+                else:
+                    print("   ❌ Missing total_found in response")
+                    return False
+                
+            else:
+                print("   ❌ API integration failed")
+                return False
+            
+            # Test 4: Verify no conflicts between fixes
+            print("   🔍 Checking for conflicts between fixes...")
+            
+            # Check that Jumbo coordinate search doesn't interfere with Lider extraction
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Jumbo should not contain Lider-specific logic
+            if "lider" in jumbo_source.lower() and "Lider" not in jumbo_source:
+                print("   ⚠️ Jumbo method contains lowercase 'lider' references")
+            else:
+                print("   ✅ Jumbo method is properly isolated")
+            
+            # Check that Lider extraction doesn't contain coordinate tapping logic
+            lider_method = getattr(mobile_scraper, '_perform_lider_search_ultra_robust')
+            lider_source = inspect.getsource(lider_method)
+            
+            if "coordinate-based search button tapping" in lider_source:
+                print("   ⚠️ Lider method contains coordinate tapping (should be Jumbo-specific)")
+            else:
+                print("   ✅ Lider method does not contain coordinate tapping logic")
+            
+            print("✅ Integration fixes compatibility test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing integration fixes compatibility: {e}")
+            return False
+
     def test_fixed_price_parsing_logic(self):
         """Test the fixed price parsing logic to ensure each price element is parsed correctly"""
         print("\n🔍 Testing Fixed Price Parsing Logic...")
