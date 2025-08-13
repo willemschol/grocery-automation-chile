@@ -1958,7 +1958,7 @@ Leche,1L"""
                 return False
             
             # Test 3: Verify alternative keycodes come after coordinate tapping
-            if "# Method 3: If no search button, try alternative submission methods" in method_source:
+            if "# Method 3: If no search button, try alternative keycodes" in method_source:
                 print("   ✅ Alternative keycodes is Method 3 (after coordinate tapping)")
             else:
                 print("   ❌ Alternative keycodes not properly sequenced")
