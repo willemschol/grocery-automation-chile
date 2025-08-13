@@ -580,10 +580,15 @@ class GroceryAutomationTester:
                 method_source = inspect.getsource(method)
                 
                 # Test 1: Verify try-catch blocks for each operation
-                operations = ['click', 'clear', 'send_keys', 'verify']
+                operations = [
+                    ('click', 'click_error'),
+                    ('clear', 'clear_error'), 
+                    ('send_keys', 'type_error'),  # The actual variable name is type_error
+                    ('verify', 'verify_error')
+                ]
                 
-                for operation in operations:
-                    if f"except Exception as {operation}_error" in method_source:
+                for operation, error_var in operations:
+                    if f"except Exception as {error_var}" in method_source:
                         print(f"   ✅ {method_name}: Has error handling for {operation} operation")
                     else:
                         print(f"   ❌ {method_name}: Missing error handling for {operation} operation")
