@@ -568,10 +568,9 @@ class MobileAppScraper:
             
             print(f"   📋 Page has {len(text_content)} text elements")
             
-            # Check for home page indicators
+            # Check for home page indicators - ONLY specific home page indicators
             home_indicators = [
-                "inicio", "home", "destacados", "ofertas", "categorías",
-                "mi cuenta", "carrito", "tiendas", "sucursales"
+                "inicio", "home", "mi cuenta", "carrito"
             ]
             
             home_count = 0
@@ -581,10 +580,10 @@ class MobileAppScraper:
                         home_count += 1
                         break
             
-            # Check for search result indicators
+            # Check for search result indicators - More specific to search results
             search_indicators = [
-                "resultados", "productos", "encontrado", "filtrar",
-                "ordenar", "precio", "$", "agregar", "disponible"
+                "resultados", "productos encontrados", "filtrar",
+                "ordenar", "agregar al carrito", "disponible en tienda"
             ]
             
             search_count = 0
@@ -594,18 +593,21 @@ class MobileAppScraper:
                         search_count += 1
                         break
             
-            # Decision logic
+            # Decision logic - More lenient for search results
             if home_count >= 2:
                 print(f"   ❌ Found {home_count} home indicators - returned to home page")
                 return False
-            elif search_count >= 2:
+            elif search_count >= 1:
                 print(f"   ✅ Found {search_count} search indicators - on search results page")
                 return True
             else:
                 print(f"   ⚠️ Unclear navigation state - home:{home_count}, search:{search_count}")
-                # Save page source for debugging
-                self.save_page_source("jumbo_unclear_navigation.xml")
-                return False
+                # Save page source for debugging with Windows-compatible path
+                import tempfile
+                debug_file = f"{tempfile.gettempdir()}/jumbo_unclear_navigation.xml"
+                self.save_page_source(debug_file)
+                # If unclear but no strong home indicators, assume search results
+                return home_count == 0
                 
         except Exception as e:
             print(f"   ❌ Navigation validation error: {e}")
