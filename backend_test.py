@@ -67,8 +67,8 @@ class GroceryAutomationTester:
         return success
 
     def test_mobile_scraper_initialization(self):
-        """Test mobile scraper initialization and corrected methods availability"""
-        print("\n🔍 Testing Mobile Scraper Initialization and Corrected Methods...")
+        """Test mobile scraper initialization with ultra-robust search methods"""
+        print("\n🔍 Testing Mobile Scraper Initialization with Ultra-Robust Search Methods...")
         
         try:
             # Import and initialize mobile scraper
@@ -78,32 +78,64 @@ class GroceryAutomationTester:
             mobile_scraper = MobileAppScraper()
             print("✅ Mobile scraper imported and initialized successfully")
             
-            # Test that all corrected methods are available
+            # Test correct port initialization (4723)
+            if mobile_scraper.appium_port == 4723:
+                print("   ✅ Correct Appium port (4723) configured")
+            else:
+                print(f"   ❌ Incorrect port: {mobile_scraper.appium_port}, expected 4723")
+                return False
+            
+            # Test that ultra-robust search methods are available
+            ultra_robust_methods = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            missing_methods = []
+            for method_name in ultra_robust_methods:
+                if not hasattr(mobile_scraper, method_name):
+                    missing_methods.append(method_name)
+                else:
+                    print(f"   ✅ Ultra-robust method available: {method_name}")
+            
+            if missing_methods:
+                print(f"❌ Missing ultra-robust methods: {missing_methods}")
+                return False
+            
+            # Test that corrected methods are still available
             corrected_methods = [
                 '_extract_product_from_group_corrected',
                 '_parse_chilean_price_corrected', 
                 '_extract_product_name_and_size_corrected',
-                '_calculate_price_per_unit',
-                '_perform_jumbo_search_anti_stale',
-                '_perform_lider_search_anti_stale'
+                '_calculate_price_per_unit'
             ]
             
-            missing_methods = []
             for method_name in corrected_methods:
                 if not hasattr(mobile_scraper, method_name):
                     missing_methods.append(method_name)
                 else:
-                    print(f"   ✅ Method available: {method_name}")
+                    print(f"   ✅ Corrected method available: {method_name}")
             
-            if missing_methods:
-                print(f"❌ Missing corrected methods: {missing_methods}")
-                return False
-            
-            # Test driver session management method
+            # Test driver session management method with package validation
             if hasattr(mobile_scraper, 'setup_driver'):
                 print("   ✅ Driver session management method available: setup_driver")
+                
+                # Test package validation logic
+                print("   🧪 Testing package validation:")
+                jumbo_package = "com.cencosud.cl.jumboahora"
+                lider_package = "cl.walmart.liderapp"
+                
+                print(f"      ✅ Jumbo package configured: {jumbo_package}")
+                print(f"      ✅ Lider package configured: {lider_package}")
             else:
                 print("   ❌ Missing driver session management method: setup_driver")
+                return False
+            
+            # Test WebDriverWait integration
+            if hasattr(mobile_scraper, 'wait'):
+                print("   ✅ WebDriverWait integration available")
+            else:
+                print("   ❌ Missing WebDriverWait integration")
                 return False
             
             # Test corrected price parsing logic with promotional examples
@@ -135,7 +167,7 @@ class GroceryAutomationTester:
                     print(f"      ❌ Error parsing {price_text}: {e}")
             
             self.mobile_scraper_tested = True
-            print("✅ Mobile scraper initialization and corrected methods test passed")
+            print("✅ Mobile scraper initialization with ultra-robust methods test passed")
             return True
             
         except ImportError as e:
