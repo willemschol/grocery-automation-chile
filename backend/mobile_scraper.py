@@ -325,7 +325,7 @@ class MobileAppScraper:
             print(f"⚠️ Lider login handling: {e}")
     
     async def _perform_jumbo_search_ultra_robust(self, product_name: str) -> bool:
-        """Ultra-robust Jumbo search using real-time element discovery with WebDriverWait"""
+        """Ultra-robust Jumbo search with per-operation element re-finding"""
         try:
             print(f"🎯 Starting ULTRA-ROBUST Jumbo search for '{product_name}'")
             
@@ -342,10 +342,14 @@ class MobileAppScraper:
                 try:
                     print(strategy_name)
                     
-                    # Use WebDriverWait to find elements in real-time
-                    search_elements = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_all_elements_located((AppiumBy.XPATH, xpath_selector))
-                    )
+                    # Step 1: Find elements to ensure they exist
+                    try:
+                        search_elements = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_all_elements_located((AppiumBy.XPATH, xpath_selector))
+                        )
+                    except:
+                        print(f"   ❌ No elements found with strategy {attempt}")
+                        continue
                     
                     if not search_elements:
                         print(f"   ❌ No elements found with strategy {attempt}")
@@ -353,56 +357,70 @@ class MobileAppScraper:
                     
                     print(f"   🎯 Trying element 1/{len(search_elements)}")
                     
-                    # Try first available element
-                    search_element = search_elements[0]
-                    
-                    # Check if element is usable
-                    if not search_element.is_displayed() or not search_element.is_enabled():
-                        print(f"   ❌ Element not usable")
-                        continue
-                    
-                    # Perform atomic search sequence with stale element handling
+                    # Step 2: Per-operation element re-finding to prevent staleness
                     try:
-                        print(f"   📝 Performing atomic search sequence...")
+                        print(f"   📝 Performing per-operation element re-finding...")
                         
-                        # Re-find element to ensure freshness
-                        fresh_element = WebDriverWait(self.driver, 2).until(
-                            EC.element_to_be_clickable((AppiumBy.XPATH, xpath_selector))
-                        )
-                        
-                        # Click to focus
-                        fresh_element.click()
-                        time.sleep(0.3)
-                        
-                        # Clear with error handling
+                        # OPERATION 1: Click - Find fresh element
                         try:
-                            fresh_element.clear()
+                            click_element = WebDriverWait(self.driver, 3).until(
+                                EC.element_to_be_clickable((AppiumBy.XPATH, xpath_selector))
+                            )
+                            click_element.click()
+                            print(f"   ✅ Click successful")
+                            time.sleep(0.3)
+                        except Exception as click_error:
+                            print(f"   ❌ Click failed: {click_error}")
+                            continue
+                        
+                        # OPERATION 2: Clear - Find fresh element again
+                        try:
+                            clear_element = WebDriverWait(self.driver, 3).until(
+                                EC.presence_of_element_located((AppiumBy.XPATH, xpath_selector))
+                            )
+                            clear_element.clear()
+                            print(f"   ✅ Clear successful")
                         except Exception as clear_error:
-                            print(f"   ⚠️ Clear failed, continuing...")
+                            print(f"   ⚠️ Clear failed, continuing: {clear_error}")
                         
-                        # Send keys
-                        fresh_element.send_keys(product_name)
-                        time.sleep(0.5)
+                        # OPERATION 3: Send keys - Find fresh element again
+                        try:
+                            type_element = WebDriverWait(self.driver, 3).until(
+                                EC.presence_of_element_located((AppiumBy.XPATH, xpath_selector))
+                            )
+                            type_element.send_keys(product_name)
+                            print(f"   ✅ Text input successful")
+                            time.sleep(0.5)
+                        except Exception as type_error:
+                            print(f"   ❌ Text input failed: {type_error}")
+                            continue
                         
-                        # Verify text
-                        current_text = fresh_element.get_attribute("text") or fresh_element.text or ""
-                        if product_name.lower() in current_text.lower():
-                            print(f"   ✅ Text verified: '{current_text}'")
-                            
-                            # Submit with Enter key
-                            try:
-                                self.driver.press_keycode(66)  # Enter key
-                                print(f"   🚀 Enter key pressed")
-                                time.sleep(2)  # Wait for results
+                        # OPERATION 4: Verify text - Find fresh element again
+                        try:
+                            verify_element = WebDriverWait(self.driver, 3).until(
+                                EC.presence_of_element_located((AppiumBy.XPATH, xpath_selector))
+                            )
+                            current_text = verify_element.get_attribute("text") or verify_element.text or ""
+                            if product_name.lower() in current_text.lower():
+                                print(f"   ✅ Text verified: '{current_text}'")
                                 
-                                # Validate navigation
-                                return await self._validate_jumbo_navigation()
-                            
-                            except Exception as submit_error:
-                                print(f"   ⚠️ Enter key failed: {submit_error}")
+                                # Submit with Enter key
+                                try:
+                                    self.driver.press_keycode(66)  # Enter key
+                                    print(f"   🚀 Enter key pressed")
+                                    time.sleep(2)  # Wait for results
+                                    
+                                    # Validate navigation
+                                    return await self._validate_jumbo_navigation()
+                                
+                                except Exception as submit_error:
+                                    print(f"   ⚠️ Enter key failed: {submit_error}")
+                                    continue
+                            else:
+                                print(f"   ❌ Text verification failed: expected '{product_name}', got '{current_text}'")
                                 continue
-                        else:
-                            print(f"   ❌ Text verification failed: expected '{product_name}', got '{current_text}'")
+                        except Exception as verify_error:
+                            print(f"   ❌ Text verification failed: {verify_error}")
                             continue
                             
                     except Exception as interaction_error:
