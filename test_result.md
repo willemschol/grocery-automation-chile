@@ -137,11 +137,11 @@ backend:
 
   - task: "Mobile App Search Element Interaction"
     implemented: true
-    working: true
+    working: false
     file: "backend/mobile_scraper.py"
-    stuck_count: 2
+    stuck_count: 3
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: false
         agent: "user"
@@ -170,6 +170,12 @@ backend:
       - working: true
         agent: "testing"
         comment: "COMPREHENSIVE TESTING COMPLETE: ✅ All corrected methods verified and functional: _extract_product_from_group_corrected(), _parse_chilean_price_corrected(), _extract_product_name_and_size_corrected(), _calculate_price_per_unit(), _perform_jumbo_search_anti_stale(), _perform_lider_search_anti_stale(). ✅ Mobile scraper initializes properly with corrected extraction methods. ✅ Driver session management (setup_driver) properly closes existing drivers to prevent app context mixing. ✅ Corrected promotional price parsing verified: '2 x $4.000' correctly parsed as $4.000 total (not $8.000). ✅ Both _extract_jumbo_products() and _extract_lider_products() use corrected proximity-based approach with Y-coordinate grouping. ✅ /api/search-product endpoint confirmed to call mobile automation instead of web scraping. ✅ Backend gracefully handles Appium connection issues (expected without physical devices). All corrected extraction logic is implemented and ready for device testing."
+      - working: false
+        agent: "user"
+        comment: "CRITICAL BUG: Jumbo search returns to home page after entering text. Both apps show StaleElementReferenceException errors. Jumbo: 'Found 2 home indicators - returned to home page'. Lider: Multiple stale element errors but still extracts 8 products."
+      - working: false
+        agent: "troubleshoot"
+        comment: "ROOT CAUSE IDENTIFIED: The 'anti-stale' methods are CAUSING stale element issues by caching XPath selectors and trying to reuse them. Mobile app DOM structures are dynamic - cached XPaths become invalid during navigation. Solution: Replace cached XPath approach with real-time element discovery using WebDriverWait and Expected Conditions."
 
   - task: "Jumbo Product Extraction and Promotion Recognition"
     implemented: true
