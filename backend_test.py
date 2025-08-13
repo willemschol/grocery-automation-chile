@@ -1750,15 +1750,24 @@ Leche,1L"""
             
             for target_price_elem, expected_price, description in test_cases:
                 try:
+                    print(f"      🧪 Testing {description} with target price: '{target_price_elem['text']}'")
                     result = mobile_scraper._extract_product_from_group_corrected(
                         mock_related_elements, "Test Store", target_price_elem
                     )
                     
-                    if result and result.get('price') == expected_price:
-                        print(f"   ✅ {description}: Correctly parsed '{target_price_elem['text']}' as ${expected_price}")
+                    if result:
+                        actual_price = result.get('price', 0)
+                        product_name = result.get('name', 'No name')
+                        print(f"      📦 Result: name='{product_name}', price=${actual_price}")
+                        
+                        if actual_price == expected_price:
+                            print(f"   ✅ {description}: Correctly parsed '{target_price_elem['text']}' as ${expected_price}")
+                        else:
+                            print(f"   ❌ {description}: Expected ${expected_price}, got ${actual_price}")
+                            return False
                     else:
-                        actual_price = result.get('price') if result else 0
-                        print(f"   ❌ {description}: Expected ${expected_price}, got ${actual_price}")
+                        print(f"      📦 Result: None (no product extracted)")
+                        print(f"   ❌ {description}: No product extracted for '{target_price_elem['text']}'")
                         return False
                         
                 except Exception as e:
