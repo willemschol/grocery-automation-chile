@@ -1250,21 +1250,9 @@ class MobileAppScraper:
         if not text or len(text.strip()) < 3:
             return False
         
-        # Filter out generic texts
-        generic_texts = [
-            'ver más', 'ver todo', 'agregar', 'comprar', 'añadir', 'detalle',
-            'disponible', 'stock', 'envío', 'delivery', 'gratis', 'precio',
-            'oferta', 'descuento', 'promoción', 'unidad', 'kg', 'gr', 'ml', 'lt'
-        ]
-        
         text_lower = text.lower().strip()
         
-        # Skip if it's a generic text
-        for generic in generic_texts:
-            if generic in text_lower:
-                return False
-        
-        # Look for product keywords (prioritize food/beverage terms)
+        # Look for product keywords FIRST (prioritize food/beverage terms)
         product_keywords = [
             'coca', 'pepsi', 'bebida', 'agua', 'jugo', 'leche', 'yogurt',
             'pan', 'arroz', 'fideos', 'pasta', 'aceite', 'azúcar', 'sal',
@@ -1275,6 +1263,18 @@ class MobileAppScraper:
         for keyword in product_keywords:
             if keyword in text_lower:
                 return True
+        
+        # Filter out generic texts
+        generic_texts = [
+            'ver más', 'ver todo', 'agregar', 'comprar', 'añadir', 'detalle',
+            'disponible', 'stock', 'envío', 'delivery', 'gratis', 'precio',
+            'oferta', 'descuento', 'promoción', 'unidad', 'kg', 'gr', 'ml', 'lt'
+        ]
+        
+        # Skip if it's a generic text
+        for generic in generic_texts:
+            if generic in text_lower:
+                return False
         
         # General criteria: reasonable length and not pure numbers
         if 5 <= len(text) <= 100 and not text.isdigit():
