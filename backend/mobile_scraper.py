@@ -959,11 +959,21 @@ class MobileAppScraper:
                 print("❌ No text elements found")
                 return []
             
-            # Find potential price elements first
-            price_elements = []
-            for elem_info in all_text_elements:
-                if "$" in elem_info['text'] or self._looks_like_price(elem_info['text']):
-                    price_elements.append(elem_info)
+            # Find potential price elements with ENHANCED debugging
+            potential_price_elements = []
+            print(f"🔍 Analyzing {len(all_text_elements)} elements for price patterns...")
+            
+            for i, elem_info in enumerate(all_text_elements):
+                text = elem_info['text']
+                print(f"   📝 Element {i+1}: '{text}'")
+                
+                if self._looks_like_price(text):
+                    potential_price_elements.append(elem_info)
+                    print(f"   💰 PRICE DETECTED: '{text}'")
+                else:
+                    print(f"   ❌ Not a price: '{text}'")
+            
+            price_elements = potential_price_elements
             
             print(f"💰 Found {len(price_elements)} potential price elements")
             
