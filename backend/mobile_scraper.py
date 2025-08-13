@@ -1160,7 +1160,7 @@ class MobileAppScraper:
         
         return False
     
-    def _extract_product_from_group_corrected(self, related_elements: List[Dict], store_name: str) -> Dict:
+    def _extract_product_from_group_corrected(self, related_elements: List[Dict], store_name: str, target_price_elem: Dict = None) -> Dict:
         """Extract product information from a group of related elements using corrected logic"""
         try:
             if not related_elements:
@@ -1188,18 +1188,35 @@ class MobileAppScraper:
             
             print(f"   📊 Categories - Prices: {len(price_candidates)}, Names: {len(name_candidates)}, Sizes: {len(size_candidates)}")
             
-            # Extract the best price using corrected parsing
+            # Extract the SPECIFIC price if target_price_elem is provided, otherwise use first valid price
             price_value = 0.0
             price_text = ""
             promotion_info = {}
             
-            for price_candidate in price_candidates:
-                parsed_result = self._parse_chilean_price_corrected(price_candidate)
+            # If we have a target price element, use that specific price
+            if target_price_elem and target_price_elem['text']:
+                target_price_text = target_price_elem['text']
+                print(f"     🔍 Parsing price: '{target_price_text}'")
+                parsed_result = self._parse_chilean_price_corrected(target_price_text)
                 if parsed_result['price'] > 0:
                     price_value = parsed_result['price']
-                    price_text = price_candidate
+                    price_text = target_price_text
                     promotion_info = parsed_result['promotion']
-                    break
+                    if promotion_info:
+                        print(f"     💰 {promotion_info['type'].title()}: {promotion_info['display']}")
+                    else:
+                        print(f"     💰 Regular price: ${price_value}")
+            
+            # Fallback: use first valid price from candidates if target price parsing failed
+            if price_value == 0.0:
+                for price_candidate in price_candidates:
+                    parsed_result = self._parse_chilean_price_corrected(price_candidate)
+                    if parsed_result['price'] > 0:
+                        price_value = parsed_result['price']
+                        price_text = price_candidate
+                        promotion_info = parsed_result['promotion']
+                        print(f"     🔍 Fallback parsing price: '{price_candidate}'")
+                        break
             
             # Extract the best product name
             product_name = self._extract_product_name_and_size_corrected(name_candidates, size_candidates)
