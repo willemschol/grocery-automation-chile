@@ -68,7 +68,609 @@ class GroceryAutomationTester:
         )
         return success
 
-    def test_mobile_scraper_initialization(self):
+    def test_per_operation_element_refinding(self):
+        """Test per-operation element re-finding in ultra-robust methods"""
+        print("\n🔍 Testing Per-Operation Element Re-Finding...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported and initialized successfully")
+            
+            # Test that ultra-robust methods exist
+            ultra_robust_methods = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            for method_name in ultra_robust_methods:
+                if not hasattr(mobile_scraper, method_name):
+                    print(f"❌ Missing ultra-robust method: {method_name}")
+                    return False
+                else:
+                    print(f"   ✅ Ultra-robust method available: {method_name}")
+            
+            # Analyze the source code for per-operation element re-finding patterns
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            lider_method = getattr(mobile_scraper, '_perform_lider_search_ultra_robust')
+            
+            jumbo_source = inspect.getsource(jumbo_method)
+            lider_source = inspect.getsource(lider_method)
+            
+            # Test 1: Verify each operation (click, clear, send_keys, verify) re-finds elements
+            required_operations = [
+                ('click', 'element_to_be_clickable'),
+                ('clear', 'presence_of_element_located'),
+                ('send_keys', 'presence_of_element_located'),
+                ('verify', 'presence_of_element_located')
+            ]
+            
+            print("   🔍 Checking per-operation element re-finding patterns...")
+            
+            for operation, expected_condition in required_operations:
+                # Check Jumbo method
+                if f"# OPERATION" in jumbo_source and expected_condition in jumbo_source:
+                    operation_count = jumbo_source.count(f"WebDriverWait(self.driver")
+                    if operation_count >= 4:  # At least 4 operations should re-find elements
+                        print(f"   ✅ Jumbo method re-finds elements for {operation} operation")
+                    else:
+                        print(f"   ❌ Jumbo method insufficient element re-finding: {operation_count} operations")
+                        return False
+                else:
+                    print(f"   ❌ Jumbo method missing per-operation pattern for {operation}")
+                    return False
+                
+                # Check Lider method
+                if f"# OPERATION" in lider_source and expected_condition in lider_source:
+                    operation_count = lider_source.count(f"WebDriverWait(self.driver")
+                    if operation_count >= 4:  # At least 4 operations should re-find elements
+                        print(f"   ✅ Lider method re-finds elements for {operation} operation")
+                    else:
+                        print(f"   ❌ Lider method insufficient element re-finding: {operation_count} operations")
+                        return False
+                else:
+                    print(f"   ❌ Lider method missing per-operation pattern for {operation}")
+                    return False
+            
+            # Test 2: Verify fresh element references (no element reuse)
+            print("   🔍 Checking fresh element reference patterns...")
+            
+            fresh_element_patterns = [
+                'click_element = WebDriverWait',
+                'clear_element = WebDriverWait', 
+                'type_element = WebDriverWait',
+                'verify_element = WebDriverWait'
+            ]
+            
+            for pattern in fresh_element_patterns:
+                if pattern in jumbo_source and pattern in lider_source:
+                    print(f"   ✅ Fresh element pattern found: {pattern}")
+                else:
+                    print(f"   ❌ Missing fresh element pattern: {pattern}")
+                    return False
+            
+            # Test 3: Verify StaleElementReferenceException prevention
+            print("   🔍 Checking StaleElementReferenceException prevention...")
+            
+            if "per-operation element re-finding" in jumbo_source and "per-operation element re-finding" in lider_source:
+                print("   ✅ Per-operation element re-finding documented in methods")
+            else:
+                print("   ❌ Per-operation element re-finding not documented")
+                return False
+            
+            # Test 4: Verify no element caching/reuse
+            cached_element_antipatterns = [
+                'search_element =',  # Should not cache elements
+                'element.click()',   # Should not reuse elements
+                'cached_element'     # Should not have cached elements
+            ]
+            
+            has_antipatterns = False
+            for antipattern in cached_element_antipatterns:
+                if antipattern in jumbo_source or antipattern in lider_source:
+                    print(f"   ⚠️ Found potential element caching antipattern: {antipattern}")
+                    has_antipatterns = True
+            
+            if not has_antipatterns:
+                print("   ✅ No element caching antipatterns found")
+            
+            print("✅ Per-operation element re-finding test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing per-operation element re-finding: {e}")
+            return False
+
+    def test_windows_path_compatibility(self):
+        """Test Windows path compatibility in save_page_source and debug methods"""
+        print("\n🔍 Testing Windows Path Compatibility...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Check save_page_source method uses tempfile.gettempdir()
+            save_method = getattr(mobile_scraper, 'save_page_source')
+            save_source = inspect.getsource(save_method)
+            
+            if 'tempfile.gettempdir()' in save_source:
+                print("   ✅ save_page_source uses tempfile.gettempdir() for Windows compatibility")
+            else:
+                print("   ❌ save_page_source does not use tempfile.gettempdir()")
+                return False
+            
+            # Test 2: Check for hardcoded /tmp/ paths (should not exist)
+            if '/tmp/' in save_source:
+                print("   ❌ save_page_source contains hardcoded /tmp/ path")
+                return False
+            else:
+                print("   ✅ save_page_source avoids hardcoded /tmp/ paths")
+            
+            # Test 3: Check debug_current_state method (if it saves files)
+            debug_method = getattr(mobile_scraper, 'debug_current_state')
+            debug_source = inspect.getsource(debug_method)
+            
+            # This method doesn't save files, so just verify it exists
+            print("   ✅ debug_current_state method available")
+            
+            # Test 4: Check _validate_jumbo_navigation method for tempfile usage
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            if 'tempfile.gettempdir()' in validate_source:
+                print("   ✅ _validate_jumbo_navigation uses tempfile.gettempdir() for debug files")
+            else:
+                print("   ❌ _validate_jumbo_navigation does not use tempfile.gettempdir()")
+                return False
+            
+            # Test 5: Check product extraction methods for tempfile usage
+            extract_methods = ['_extract_jumbo_products', '_extract_lider_products']
+            
+            for method_name in extract_methods:
+                if hasattr(mobile_scraper, method_name):
+                    method = getattr(mobile_scraper, method_name)
+                    method_source = inspect.getsource(method)
+                    
+                    if 'tempfile.gettempdir()' in method_source:
+                        print(f"   ✅ {method_name} uses tempfile.gettempdir() for debug files")
+                    else:
+                        print(f"   ❌ {method_name} does not use tempfile.gettempdir()")
+                        return False
+            
+            # Test 6: Verify tempfile module is imported
+            mobile_scraper_file = '/app/backend/mobile_scraper.py'
+            with open(mobile_scraper_file, 'r') as f:
+                content = f.read()
+                
+            if 'import tempfile' in content or 'tempfile.gettempdir()' in content:
+                print("   ✅ tempfile module usage confirmed")
+            else:
+                print("   ❌ tempfile module not properly used")
+                return False
+            
+            print("✅ Windows path compatibility test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing Windows path compatibility: {e}")
+            return False
+
+    def test_enhanced_navigation_validation(self):
+        """Test enhanced navigation validation with refined home page indicators"""
+        print("\n🔍 Testing Enhanced Navigation Validation...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Check _validate_jumbo_navigation method exists
+            if not hasattr(mobile_scraper, '_validate_jumbo_navigation'):
+                print("   ❌ _validate_jumbo_navigation method not found")
+                return False
+            
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            # Test 2: Verify refined home page indicators (only specific ones)
+            expected_home_indicators = ["inicio", "home", "mi cuenta", "carrito"]
+            
+            print("   🔍 Checking refined home page indicators...")
+            for indicator in expected_home_indicators:
+                if f'"{indicator}"' in validate_source:
+                    print(f"   ✅ Home indicator found: {indicator}")
+                else:
+                    print(f"   ❌ Missing expected home indicator: {indicator}")
+                    return False
+            
+            # Test 3: Verify it doesn't use overly broad indicators
+            broad_indicators = ["productos", "buscar", "ofertas", "categorias"]
+            has_broad_indicators = False
+            
+            for indicator in broad_indicators:
+                if f'"{indicator}"' in validate_source:
+                    print(f"   ⚠️ Found broad indicator (should be avoided): {indicator}")
+                    has_broad_indicators = True
+            
+            if not has_broad_indicators:
+                print("   ✅ No overly broad home indicators found")
+            
+            # Test 4: Verify search result indicators exist
+            expected_search_indicators = [
+                "resultados", "productos encontrados", "filtrar",
+                "ordenar", "agregar al carrito", "disponible en tienda"
+            ]
+            
+            print("   🔍 Checking search result indicators...")
+            for indicator in expected_search_indicators:
+                if f'"{indicator}"' in validate_source:
+                    print(f"   ✅ Search indicator found: {indicator}")
+                else:
+                    print(f"   ❌ Missing expected search indicator: {indicator}")
+                    return False
+            
+            # Test 5: Verify lenient logic for search results
+            if "search_count >= 1" in validate_source:
+                print("   ✅ Lenient search result validation (>= 1 indicator)")
+            else:
+                print("   ❌ Search result validation not lenient enough")
+                return False
+            
+            # Test 6: Verify strict logic for home page detection
+            if "home_count >= 2" in validate_source:
+                print("   ✅ Strict home page detection (>= 2 indicators)")
+            else:
+                print("   ❌ Home page detection not strict enough")
+                return False
+            
+            # Test 7: Verify unclear state handling
+            if "home_count == 0" in validate_source:
+                print("   ✅ Unclear state defaults to search results when no home indicators")
+            else:
+                print("   ❌ Unclear state handling not implemented")
+                return False
+            
+            print("✅ Enhanced navigation validation test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing enhanced navigation validation: {e}")
+            return False
+
+    def test_stale_element_prevention(self):
+        """Test StaleElementReferenceException prevention through fresh element references"""
+        print("\n🔍 Testing StaleElementReferenceException Prevention...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test both ultra-robust methods
+            methods_to_test = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            for method_name in methods_to_test:
+                print(f"   🔍 Testing {method_name}...")
+                
+                if not hasattr(mobile_scraper, method_name):
+                    print(f"   ❌ Method {method_name} not found")
+                    return False
+                
+                method = getattr(mobile_scraper, method_name)
+                method_source = inspect.getsource(method)
+                
+                # Test 1: Verify each operation gets a fresh element
+                operations = [
+                    ('click_element', 'element_to_be_clickable'),
+                    ('clear_element', 'presence_of_element_located'),
+                    ('type_element', 'presence_of_element_located'),
+                    ('verify_element', 'presence_of_element_located')
+                ]
+                
+                for var_name, expected_condition in operations:
+                    if f"{var_name} = WebDriverWait" in method_source:
+                        print(f"   ✅ {method_name}: {var_name} gets fresh element reference")
+                    else:
+                        print(f"   ❌ {method_name}: {var_name} does not get fresh element reference")
+                        return False
+                
+                # Test 2: Verify WebDriverWait is used for each operation
+                webdriver_wait_count = method_source.count('WebDriverWait(self.driver')
+                if webdriver_wait_count >= 4:  # At least 4 operations should use WebDriverWait
+                    print(f"   ✅ {method_name}: Uses WebDriverWait {webdriver_wait_count} times (sufficient)")
+                else:
+                    print(f"   ❌ {method_name}: Only uses WebDriverWait {webdriver_wait_count} times (insufficient)")
+                    return False
+                
+                # Test 3: Verify Expected Conditions are used
+                expected_conditions = [
+                    'element_to_be_clickable',
+                    'presence_of_element_located'
+                ]
+                
+                for condition in expected_conditions:
+                    if condition in method_source:
+                        print(f"   ✅ {method_name}: Uses Expected Condition {condition}")
+                    else:
+                        print(f"   ❌ {method_name}: Missing Expected Condition {condition}")
+                        return False
+                
+                # Test 4: Verify no element reuse patterns
+                element_reuse_patterns = [
+                    'search_element.click()',
+                    'search_element.clear()',
+                    'search_element.send_keys(',
+                    'element = self.driver.find_element'  # Direct find_element without WebDriverWait
+                ]
+                
+                has_reuse = False
+                for pattern in element_reuse_patterns:
+                    if pattern in method_source:
+                        print(f"   ⚠️ {method_name}: Found potential element reuse pattern: {pattern}")
+                        has_reuse = True
+                
+                if not has_reuse:
+                    print(f"   ✅ {method_name}: No element reuse patterns found")
+                
+                # Test 5: Verify proper error handling for stale elements
+                if "except Exception as" in method_source:
+                    print(f"   ✅ {method_name}: Has exception handling for operation failures")
+                else:
+                    print(f"   ❌ {method_name}: Missing exception handling")
+                    return False
+            
+            print("✅ StaleElementReferenceException prevention test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing StaleElementReferenceException prevention: {e}")
+            return False
+
+    def test_mobile_scraper_integration(self):
+        """Test that API endpoints correctly call the updated ultra-robust methods"""
+        print("\n🔍 Testing Mobile Scraper Integration with API Endpoints...")
+        
+        try:
+            # Test 1: Verify mobile scraper can be imported and initialized
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported and initialized successfully")
+            
+            # Test 2: Verify ultra-robust methods are available
+            ultra_robust_methods = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            for method_name in ultra_robust_methods:
+                if hasattr(mobile_scraper, method_name):
+                    print(f"   ✅ Ultra-robust method available: {method_name}")
+                else:
+                    print(f"   ❌ Missing ultra-robust method: {method_name}")
+                    return False
+            
+            # Test 3: Verify main search methods call ultra-robust methods
+            import inspect
+            
+            search_jumbo_method = getattr(mobile_scraper, 'search_jumbo_app')
+            search_lider_method = getattr(mobile_scraper, 'search_lider_app')
+            
+            jumbo_source = inspect.getsource(search_jumbo_method)
+            lider_source = inspect.getsource(search_lider_method)
+            
+            if '_perform_jumbo_search_ultra_robust' in jumbo_source:
+                print("   ✅ search_jumbo_app calls ultra-robust method")
+            else:
+                print("   ❌ search_jumbo_app does not call ultra-robust method")
+                return False
+            
+            if '_perform_lider_search_ultra_robust' in lider_source:
+                print("   ✅ search_lider_app calls ultra-robust method")
+            else:
+                print("   ❌ search_lider_app does not call ultra-robust method")
+                return False
+            
+            # Test 4: Test API endpoint integration
+            print("   🔍 Testing API endpoint integration...")
+            
+            success, response = self.run_test(
+                "Mobile Scraper API Integration",
+                "POST",
+                "api/search-product",
+                200,
+                data={"product_name": "Coca Cola"}
+            )
+            
+            if success:
+                print("   ✅ /api/search-product endpoint accessible")
+                
+                # Check response structure
+                if 'jumbo_results' in response and 'lider_results' in response:
+                    print("   ✅ Response contains both jumbo_results and lider_results")
+                else:
+                    print("   ❌ Response missing expected result structure")
+                    return False
+                
+                # Check total_found field
+                if 'total_found' in response:
+                    print("   ✅ Response contains total_found field")
+                else:
+                    print("   ❌ Response missing total_found field")
+                    return False
+                
+                print(f"   📊 API Response: {response.get('total_found', 0)} total products found")
+                
+            else:
+                print("   ❌ /api/search-product endpoint failed")
+                return False
+            
+            # Test 5: Verify correct package names are configured
+            expected_packages = {
+                'jumbo': 'com.cencosud.cl.jumboahora',
+                'lider': 'cl.walmart.liderapp'
+            }
+            
+            # Check if setup_driver method validates packages correctly
+            setup_method = getattr(mobile_scraper, 'setup_driver')
+            setup_source = inspect.getsource(setup_method)
+            
+            for store, package in expected_packages.items():
+                if package in setup_source or package in jumbo_source or package in lider_source:
+                    print(f"   ✅ Correct {store} package configured: {package}")
+                else:
+                    print(f"   ❌ Missing or incorrect {store} package: {package}")
+                    return False
+            
+            print("✅ Mobile scraper integration test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing mobile scraper integration: {e}")
+            return False
+
+    def test_error_handling_and_logging(self):
+        """Test error handling and logging in ultra-robust methods"""
+        print("\n🔍 Testing Error Handling and Logging...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test both ultra-robust methods
+            methods_to_test = [
+                '_perform_jumbo_search_ultra_robust',
+                '_perform_lider_search_ultra_robust'
+            ]
+            
+            for method_name in methods_to_test:
+                print(f"   🔍 Testing error handling in {method_name}...")
+                
+                if not hasattr(mobile_scraper, method_name):
+                    print(f"   ❌ Method {method_name} not found")
+                    return False
+                
+                method = getattr(mobile_scraper, method_name)
+                method_source = inspect.getsource(method)
+                
+                # Test 1: Verify try-catch blocks for each operation
+                operations = ['click', 'clear', 'send_keys', 'verify']
+                
+                for operation in operations:
+                    if f"except Exception as {operation}_error" in method_source:
+                        print(f"   ✅ {method_name}: Has error handling for {operation} operation")
+                    else:
+                        print(f"   ❌ {method_name}: Missing error handling for {operation} operation")
+                        return False
+                
+                # Test 2: Verify logging for successful operations
+                success_log_patterns = [
+                    'print(f"   ✅',
+                    'successful")',
+                    'print(f"   🚀'
+                ]
+                
+                success_logs_found = 0
+                for pattern in success_log_patterns:
+                    if pattern in method_source:
+                        success_logs_found += 1
+                
+                if success_logs_found >= 2:
+                    print(f"   ✅ {method_name}: Has adequate success logging")
+                else:
+                    print(f"   ❌ {method_name}: Insufficient success logging")
+                    return False
+                
+                # Test 3: Verify logging for failed operations
+                error_log_patterns = [
+                    'print(f"   ❌',
+                    'failed:',
+                    'error:'
+                ]
+                
+                error_logs_found = 0
+                for pattern in error_log_patterns:
+                    if pattern in method_source:
+                        error_logs_found += 1
+                
+                if error_logs_found >= 2:
+                    print(f"   ✅ {method_name}: Has adequate error logging")
+                else:
+                    print(f"   ❌ {method_name}: Insufficient error logging")
+                    return False
+                
+                # Test 4: Verify graceful degradation (continue on individual failures)
+                if "continue" in method_source:
+                    print(f"   ✅ {method_name}: Has graceful degradation with continue statements")
+                else:
+                    print(f"   ❌ {method_name}: Missing graceful degradation")
+                    return False
+                
+                # Test 5: Verify multiple strategy attempts
+                if "search_strategies" in method_source and "for attempt" in method_source:
+                    print(f"   ✅ {method_name}: Implements multiple strategy attempts")
+                else:
+                    print(f"   ❌ {method_name}: Missing multiple strategy attempts")
+                    return False
+                
+                # Test 6: Verify final fallback handling
+                if "All" in method_source and "strategies failed" in method_source:
+                    print(f"   ✅ {method_name}: Has final fallback error handling")
+                else:
+                    print(f"   ❌ {method_name}: Missing final fallback error handling")
+                    return False
+            
+            # Test 7: Verify main search methods have error handling
+            main_methods = ['search_jumbo_app', 'search_lider_app']
+            
+            for method_name in main_methods:
+                method = getattr(mobile_scraper, method_name)
+                method_source = inspect.getsource(method)
+                
+                if "try:" in method_source and "except Exception as e:" in method_source:
+                    print(f"   ✅ {method_name}: Has top-level error handling")
+                else:
+                    print(f"   ❌ {method_name}: Missing top-level error handling")
+                    return False
+                
+                if "finally:" in method_source and "close_driver" in method_source:
+                    print(f"   ✅ {method_name}: Has proper cleanup in finally block")
+                else:
+                    print(f"   ❌ {method_name}: Missing proper cleanup")
+                    return False
+            
+            print("✅ Error handling and logging test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing error handling and logging: {e}")
+            return False
         """Test mobile scraper initialization with ultra-robust search methods"""
         print("\n🔍 Testing Mobile Scraper Initialization with Ultra-Robust Search Methods...")
         
