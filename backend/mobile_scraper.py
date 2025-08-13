@@ -634,47 +634,65 @@ class MobileAppScraper:
             return False
 
     async def _validate_jumbo_navigation(self) -> bool:
-        """Simplified Jumbo navigation validation based on activity and timing"""
+        """STRICT Jumbo navigation validation - no more benefit of doubt"""
         try:
-            print(f"🎯 Enhanced Jumbo navigation validation...")
+            print(f"🎯 STRICT Jumbo navigation validation...")
             
-            # Wait longer for navigation to complete
-            time.sleep(4)
+            # Wait a moment for navigation to complete
+            time.sleep(2)
             
             # Check current activity
             current_activity = self.driver.current_activity
             print(f"   📱 Current activity: {current_activity}")
             
-            # Simple logic: If we're still in MainActivity after 4 seconds, likely returned to home
-            # But if there's any indication of search/product content, assume success
-            if current_activity == ".features.main.activity.MainActivity":
-                
-                # Get page source to check for any product-related content
-                page_source = self.driver.page_source.lower()
-                
-                # Look for any signs of product/search content
-                product_indicators = [
-                    "producto", "price", "precio", "agregar", "unidad", 
-                    "ml", "gr", "kg", "lt", "disponible", "stock"
-                ]
-                
-                product_found = any(indicator in page_source for indicator in product_indicators)
-                
-                if product_found:
-                    print(f"   ✅ MainActivity but found product content - assuming search results")
-                    return True
-                else:
-                    print(f"   ⚠️ MainActivity with no product content - might be home page")
-                    # Give benefit of doubt - continue with extraction to see if products found
-                    return True  # Let the extraction logic determine if there are actually products
-            else:
-                print(f"   ✅ Different activity - likely on search results: {current_activity}")
+            # Get page source to check content
+            page_source = self.driver.page_source.lower()
+            
+            # STRICT check: Look for clear home page indicators
+            home_page_indicators = [
+                "experiencia única", "variedad de cortes", "¡participa!",
+                "categorías destacadas", "frutas y verduras", "productos frecuentes",
+                "mostrar más", "despacho a:", "¿qué estás buscando?"
+            ]
+            
+            home_indicators_found = 0
+            for indicator in home_page_indicators:
+                if indicator in page_source:
+                    home_indicators_found += 1
+                    print(f"   🏠 Found home indicator: '{indicator}'")
+            
+            # STRICT check: Look for search result indicators
+            search_result_indicators = [
+                "resultados", "productos encontrados", "filtrar resultados",
+                "ordenar por", "precio desde", "precio hasta", "agregar al carrito",
+                "disponible en tienda", "sin stock", "ver producto"
+            ]
+            
+            search_indicators_found = 0
+            for indicator in search_result_indicators:
+                if indicator in page_source:
+                    search_indicators_found += 1
+                    print(f"   📦 Found search indicator: '{indicator}'")
+            
+            # STRICT decision logic
+            if home_indicators_found >= 3:
+                print(f"   ❌ STRICT VALIDATION: Found {home_indicators_found} home indicators - clearly on home page")
+                print(f"   🚫 Search failed - Jumbo returned to home instead of showing results")
+                return False
+            elif search_indicators_found >= 2:
+                print(f"   ✅ STRICT VALIDATION: Found {search_indicators_found} search indicators - on search results")
                 return True
+            elif current_activity != ".features.main.activity.MainActivity":
+                print(f"   ✅ STRICT VALIDATION: Different activity - likely search results")
+                return True
+            else:
+                print(f"   ❌ STRICT VALIDATION: MainActivity + unclear content = search failed")
+                print(f"   📊 Home indicators: {home_indicators_found}, Search indicators: {search_indicators_found}")
+                return False
                 
         except Exception as e:
             print(f"   ❌ Navigation validation error: {e}")
-            # On error, assume success and let extraction determine outcome
-            return True
+            return False
 
     
     async def _extract_jumbo_products(self) -> List[Dict]:
