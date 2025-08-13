@@ -404,46 +404,78 @@ class MobileAppScraper:
                             if product_name.lower() in current_text.lower():
                                 print(f"   ✅ Text verified: '{current_text}'")
                                 
-                                # Submit with Enter key and enhanced validation
+                                # Submit with Jumbo-specific search triggers
                                 try:
-                                    self.driver.press_keycode(66)  # Enter key
-                                    print(f"   🚀 Enter key pressed")
-                                    time.sleep(4)  # Longer wait for navigation
+                                    print(f"   🎯 Trying Jumbo-specific search submission methods...")
                                     
-                                    # Validate navigation immediately
-                                    activity_after_search = self.driver.current_activity
-                                    print(f"   📱 Activity after search: {activity_after_search}")
+                                    # Method 1: Try common Jumbo search button patterns first
+                                    jumbo_search_patterns = [
+                                        "//android.widget.ImageView[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                                        "//android.widget.ImageButton[contains(@content-desc,'search') or contains(@content-desc,'buscar')]",
+                                        "//*[contains(@resource-id,'search_button') or contains(@resource-id,'btn_search')]",
+                                        "//android.widget.Button[contains(@text,'Buscar') or contains(@text,'BUSCAR')]",
+                                        "//*[contains(@class,'SearchView')]//android.widget.ImageButton",
+                                        "//*[@content-desc='Search' or @content-desc='Buscar']",
+                                        "//android.widget.ImageView[@clickable='true'][contains(@bounds,'search')]"
+                                    ]
                                     
-                                    # If still in MainActivity, try search button as alternative
-                                    if activity_after_search == ".features.main.activity.MainActivity":
-                                        print(f"   ⚠️ Still in MainActivity, trying search button...")
+                                    search_button_found = False
+                                    for i, pattern in enumerate(jumbo_search_patterns, 1):
                                         try:
-                                            # Look for search button to click
-                                            search_buttons = [
-                                                "//android.widget.Button[contains(@text,'Buscar')]",
-                                                "//*[contains(@content-desc,'search') or contains(@content-desc,'buscar')]", 
-                                                "//android.widget.ImageButton[contains(@content-desc,'search')]"
-                                            ]
-                                            
-                                            for button_xpath in search_buttons:
-                                                try:
-                                                    search_btn = WebDriverWait(self.driver, 2).until(
-                                                        EC.element_to_be_clickable((AppiumBy.XPATH, button_xpath))
-                                                    )
-                                                    search_btn.click()
-                                                    print(f"   ✅ Search button clicked")
-                                                    time.sleep(3)
+                                            print(f"   🔍 Trying pattern {i}: {pattern[:50]}...")
+                                            search_btn = WebDriverWait(self.driver, 2).until(
+                                                EC.element_to_be_clickable((AppiumBy.XPATH, pattern))
+                                            )
+                                            search_btn.click()
+                                            print(f"   ✅ Jumbo search button clicked (pattern {i})")
+                                            search_button_found = True
+                                            time.sleep(4)  # Wait for navigation
+                                            break
+                                        except Exception as pattern_error:
+                                            print(f"   ❌ Pattern {i} failed: search button not found")
+                                            continue
+                                    
+                                    # Method 2: If no search button, try alternative keycodes
+                                    if not search_button_found:
+                                        print(f"   🎯 No search button found, trying alternative submission methods...")
+                                        alternative_methods = [
+                                            (84, "KEYCODE_SEARCH"),      # Android search key
+                                            (23, "KEYCODE_DPAD_CENTER"), # Center/OK key
+                                            (61, "KEYCODE_TAB"),         # Tab to next element
+                                        ]
+                                        
+                                        for keycode, method_name in alternative_methods:
+                                            try:
+                                                print(f"   🔑 Trying {method_name} (keycode {keycode})")
+                                                self.driver.press_keycode(keycode)
+                                                time.sleep(3)
+                                                
+                                                # Check if we're still in MainActivity
+                                                activity_check = self.driver.current_activity
+                                                if activity_check != ".features.main.activity.MainActivity":
+                                                    print(f"   ✅ {method_name} worked! New activity: {activity_check}")
+                                                    search_button_found = True
                                                     break
-                                                except:
-                                                    continue
-                                        except Exception as btn_error:
-                                            print(f"   ⚠️ Search button not found: {btn_error}")
+                                                else:
+                                                    print(f"   ❌ {method_name} failed, still in MainActivity")
+                                            except Exception as key_error:
+                                                print(f"   ❌ {method_name} error: {key_error}")
+                                                continue
+                                    
+                                    # Method 3: Final fallback - try Enter key as last resort
+                                    if not search_button_found:
+                                        print(f"   🎯 Final fallback: Enter key")
+                                        self.driver.press_keycode(66)  # Enter key
+                                        time.sleep(4)
                                     
                                     # Final validation
+                                    final_activity = self.driver.current_activity
+                                    print(f"   📱 Final activity: {final_activity}")
+                                    
                                     return await self._validate_jumbo_navigation()
                                 
                                 except Exception as submit_error:
-                                    print(f"   ⚠️ Enter key failed: {submit_error}")
+                                    print(f"   ❌ All Jumbo search methods failed: {submit_error}")
                                     continue
                             else:
                                 print(f"   ❌ Text verification failed: expected '{product_name}', got '{current_text}'")
