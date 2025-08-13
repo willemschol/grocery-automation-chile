@@ -431,7 +431,79 @@ Leche,1L"""
         
         return success, response
 
-    def test_excel_export_dependencies(self):
+    def test_webdriver_wait_integration(self):
+        """Test WebDriverWait integration with Expected Conditions"""
+        print("\n🔍 Testing WebDriverWait Integration with Expected Conditions...")
+        
+        try:
+            # Import and check WebDriverWait integration
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            
+            # Check if WebDriverWait is imported
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            print("   ✅ WebDriverWait and Expected Conditions imported successfully")
+            
+            # Check if mobile scraper has wait attribute
+            if hasattr(mobile_scraper, 'wait'):
+                print("   ✅ Mobile scraper has WebDriverWait instance attribute")
+            else:
+                print("   ❌ Mobile scraper missing WebDriverWait instance")
+                return False
+            
+            # Test that ultra-robust methods use WebDriverWait
+            import inspect
+            
+            # Check _perform_jumbo_search_ultra_robust method
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            if 'WebDriverWait' in jumbo_source and 'EC.' in jumbo_source:
+                print("   ✅ Jumbo ultra-robust method uses WebDriverWait with Expected Conditions")
+            else:
+                print("   ❌ Jumbo ultra-robust method missing WebDriverWait/EC usage")
+                return False
+            
+            # Check _perform_lider_search_ultra_robust method
+            lider_method = getattr(mobile_scraper, '_perform_lider_search_ultra_robust')
+            lider_source = inspect.getsource(lider_method)
+            
+            if 'WebDriverWait' in lider_source and 'EC.' in lider_source:
+                print("   ✅ Lider ultra-robust method uses WebDriverWait with Expected Conditions")
+            else:
+                print("   ❌ Lider ultra-robust method missing WebDriverWait/EC usage")
+                return False
+            
+            # Check for real-time element discovery patterns
+            real_time_patterns = [
+                'presence_of_all_elements_located',
+                'element_to_be_clickable',
+                'fresh_element'
+            ]
+            
+            for pattern in real_time_patterns:
+                if pattern in jumbo_source and pattern in lider_source:
+                    print(f"   ✅ Real-time element discovery pattern found: {pattern}")
+                else:
+                    print(f"   ❌ Missing real-time pattern: {pattern}")
+                    return False
+            
+            # Check for StaleElementReferenceException handling
+            if 'fresh_element' in jumbo_source and 'fresh_element' in lider_source:
+                print("   ✅ StaleElementReferenceException prevention implemented (fresh element re-finding)")
+            else:
+                print("   ❌ Missing StaleElementReferenceException prevention")
+                return False
+            
+            print("✅ WebDriverWait integration with Expected Conditions test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing WebDriverWait integration: {e}")
+            return False
         """Test that required dependencies (openpyxl, pandas) are available"""
         print("\n🔍 Testing Excel Export Dependencies...")
         
