@@ -457,16 +457,42 @@ class MobileAppScraper:
                                             try:
                                                 print(f"   📍 Trying coordinate tap {i}: ({x}, {y})")
                                                 self.driver.tap([(x, y)])
-                                                time.sleep(2)
+                                                time.sleep(3)  # Wait for UI response
                                                 
-                                                # Check if we're still in MainActivity
+                                                # Enhanced success detection - check page content changes, not just activity
+                                                print(f"   🔍 Checking for search success after coordinate tap {i}...")
+                                                
+                                                # Get page source to analyze content
+                                                page_source = self.driver.page_source.lower()
+                                                
+                                                # Look for signs that search executed (content changed)
+                                                search_success_indicators = [
+                                                    "resultados", "productos", "filtrar", "ordenar",
+                                                    "precio", "agregar", "disponible", "stock",
+                                                    "ver producto", "añadir al carro", "comprar"
+                                                ]
+                                                
+                                                success_count = 0
+                                                for indicator in search_success_indicators:
+                                                    if indicator in page_source:
+                                                        success_count += 1
+                                                
+                                                # Check activity change OR content change
                                                 activity_check = self.driver.current_activity
-                                                if activity_check != ".features.main.activity.MainActivity":
-                                                    print(f"   ✅ Coordinate tap {i} worked! New activity: {activity_check}")
+                                                activity_changed = activity_check != ".features.main.activity.MainActivity"
+                                                content_suggests_search = success_count >= 2
+                                                
+                                                if activity_changed:
+                                                    print(f"   ✅ Coordinate tap {i} SUCCESS: Activity changed to {activity_check}")
+                                                    search_button_found = True
+                                                    break
+                                                elif content_suggests_search:
+                                                    print(f"   ✅ Coordinate tap {i} SUCCESS: Found {success_count} search indicators (still in MainActivity)")
                                                     search_button_found = True
                                                     break
                                                 else:
-                                                    print(f"   ❌ Coordinate tap {i} failed, still in MainActivity")
+                                                    print(f"   ❌ Coordinate tap {i} failed: Activity={activity_check}, Search indicators={success_count}")
+                                                    
                                             except Exception as tap_error:
                                                 print(f"   ❌ Coordinate tap {i} error: {tap_error}")
                                                 continue
