@@ -696,61 +696,73 @@ class MobileAppScraper:
             return False
 
     async def _validate_jumbo_navigation(self) -> bool:
-        """STRICT Jumbo navigation validation - no more benefit of doubt"""
+        """Enhanced Jumbo navigation validation - checks content not just activity"""
         try:
-            print(f"🎯 STRICT Jumbo navigation validation...")
+            print(f"🎯 Enhanced Jumbo navigation validation...")
             
-            # Wait a moment for navigation to complete
-            time.sleep(2)
+            # Wait for content to load
+            time.sleep(3)
             
             # Check current activity
             current_activity = self.driver.current_activity
             print(f"   📱 Current activity: {current_activity}")
             
-            # Get page source to check content
+            # Get page source to check content (this is the key!)
             page_source = self.driver.page_source.lower()
             
-            # STRICT check: Look for clear home page indicators
-            home_page_indicators = [
-                "experiencia única", "variedad de cortes", "¡participa!",
-                "categorías destacadas", "frutas y verduras", "productos frecuentes",
-                "mostrar más", "despacho a:", "¿qué estás buscando?"
-            ]
-            
-            home_indicators_found = 0
-            for indicator in home_page_indicators:
-                if indicator in page_source:
-                    home_indicators_found += 1
-                    print(f"   🏠 Found home indicator: '{indicator}'")
-            
-            # STRICT check: Look for search result indicators
+            # Look for CLEAR search result indicators
             search_result_indicators = [
                 "resultados", "productos encontrados", "filtrar resultados",
                 "ordenar por", "precio desde", "precio hasta", "agregar al carrito",
-                "disponible en tienda", "sin stock", "ver producto"
+                "disponible en tienda", "sin stock", "ver producto", "añadir al carro"
             ]
             
             search_indicators_found = 0
+            found_indicators = []
             for indicator in search_result_indicators:
                 if indicator in page_source:
                     search_indicators_found += 1
+                    found_indicators.append(indicator)
                     print(f"   📦 Found search indicator: '{indicator}'")
             
-            # STRICT decision logic
-            if home_indicators_found >= 3:
-                print(f"   ❌ STRICT VALIDATION: Found {home_indicators_found} home indicators - clearly on home page")
-                print(f"   🚫 Search failed - Jumbo returned to home instead of showing results")
-                return False
-            elif search_indicators_found >= 2:
-                print(f"   ✅ STRICT VALIDATION: Found {search_indicators_found} search indicators - on search results")
+            # Look for CLEAR home page indicators  
+            home_page_indicators = [
+                "experiencia única", "variedad de cortes", "¡participa!",
+                "categorías destacadas", "frutas y verduras", "productos frecuentes",
+                "mostrar más", "despacho a:", "¿qué estás buscando?", "inicio"
+            ]
+            
+            home_indicators_found = 0
+            found_home_indicators = []
+            for indicator in home_page_indicators:
+                if indicator in page_source:
+                    home_indicators_found += 1
+                    found_home_indicators.append(indicator)
+                    print(f"   🏠 Found home indicator: '{indicator}'")
+            
+            # ENHANCED decision logic
+            print(f"   📊 Analysis: {search_indicators_found} search indicators, {home_indicators_found} home indicators")
+            
+            if search_indicators_found >= 2:
+                print(f"   ✅ SEARCH SUCCESS: Found {search_indicators_found} search indicators - on search results")
+                print(f"   🎯 Search indicators: {', '.join(found_indicators[:3])}")
                 return True
+            elif home_indicators_found >= 3:
+                print(f"   ❌ HOME PAGE: Found {home_indicators_found} home indicators - search failed")
+                print(f"   🏠 Home indicators: {', '.join(found_home_indicators[:3])}")
+                return False
             elif current_activity != ".features.main.activity.MainActivity":
-                print(f"   ✅ STRICT VALIDATION: Different activity - likely search results")
+                print(f"   ✅ ACTIVITY CHANGE: Different activity - likely search results")
                 return True
             else:
-                print(f"   ❌ STRICT VALIDATION: MainActivity + unclear content = search failed")
-                print(f"   📊 Home indicators: {home_indicators_found}, Search indicators: {search_indicators_found}")
-                return False
+                print(f"   ⚠️ UNCLEAR STATE: MainActivity with {search_indicators_found} search + {home_indicators_found} home indicators")
+                # If we have at least 1 search indicator and no strong home indicators, assume success
+                if search_indicators_found >= 1 and home_indicators_found <= 1:
+                    print(f"   ✅ BENEFIT OF DOUBT: Some search indicators present - proceeding with extraction")
+                    return True
+                else:
+                    print(f"   ❌ LIKELY FAILURE: Too many home indicators or no search indicators")
+                    return False
                 
         except Exception as e:
             print(f"   ❌ Navigation validation error: {e}")
