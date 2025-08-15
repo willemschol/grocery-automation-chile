@@ -477,17 +477,17 @@ class MobileAppScraper:
                                                     if indicator in page_source:
                                                         success_count += 1
                                                 
-                                                # Check activity change OR content change
+                                                # Check activity change OR content change (LOWERED THRESHOLD)
                                                 activity_check = self.driver.current_activity
                                                 activity_changed = activity_check != ".features.main.activity.MainActivity"
-                                                content_suggests_search = success_count >= 2
+                                                content_suggests_search = success_count >= 1  # LOWERED from 2 to 1
                                                 
                                                 if activity_changed:
                                                     print(f"   ✅ Coordinate tap {i} SUCCESS: Activity changed to {activity_check}")
                                                     search_button_found = True
                                                     break
                                                 elif content_suggests_search:
-                                                    print(f"   ✅ Coordinate tap {i} SUCCESS: Found {success_count} search indicators (still in MainActivity)")
+                                                    print(f"   ✅ Coordinate tap {i} SUCCESS: Found {success_count} search indicator(s) (still in MainActivity)")
                                                     search_button_found = True
                                                     break
                                                 else:
