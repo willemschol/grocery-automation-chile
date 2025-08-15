@@ -2447,6 +2447,169 @@ Leche,1L"""
             print(f"❌ Error testing comprehensive search indicators: {e}")
             return False
 
+    def test_lowered_threshold_success_detection(self):
+        """Test the lowered threshold success detection logic for Jumbo coordinate taps"""
+        print("\n🔍 Testing Lowered Threshold Success Detection Logic for Jumbo Coordinate Taps...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify lowered coordinate tap threshold in _perform_jumbo_search_ultra_robust
+            print("   🔍 Testing lowered coordinate tap threshold...")
+            
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Check for the lowered threshold in coordinate tap logic
+            if "content_suggests_search = success_count >= 1" in jumbo_source:
+                print("   ✅ LOWERED COORDINATE TAP THRESHOLD: Found 'success_count >= 1' (changed from >= 2)")
+            else:
+                print("   ❌ LOWERED COORDINATE TAP THRESHOLD: Missing 'success_count >= 1'")
+                return False
+            
+            # Check for the comment indicating the change
+            if "# LOWERED from 2 to 1" in jumbo_source:
+                print("   ✅ THRESHOLD CHANGE DOCUMENTED: Found comment '# LOWERED from 2 to 1'")
+            else:
+                print("   ❌ THRESHOLD CHANGE DOCUMENTATION: Missing comment about lowering threshold")
+                return False
+            
+            # Test 2: Verify lowered navigation validation threshold in _validate_jumbo_navigation
+            print("   🔍 Testing lowered navigation validation threshold...")
+            
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            # Check for the lowered threshold in navigation validation
+            if "search_indicators_found >= 1" in validate_source:
+                print("   ✅ LOWERED NAVIGATION VALIDATION THRESHOLD: Found 'search_indicators_found >= 1' (changed from >= 2)")
+            else:
+                print("   ❌ LOWERED NAVIGATION VALIDATION THRESHOLD: Missing 'search_indicators_found >= 1'")
+                return False
+            
+            # Check for the comment indicating the change
+            if "# LOWERED from 2 to 1" in validate_source:
+                print("   ✅ NAVIGATION THRESHOLD CHANGE DOCUMENTED: Found comment '# LOWERED from 2 to 1'")
+            else:
+                print("   ❌ NAVIGATION THRESHOLD CHANGE DOCUMENTATION: Missing comment about lowering threshold")
+                return False
+            
+            # Test 3: Verify enhanced logging shows correct thresholds
+            print("   🔍 Testing enhanced logging for correct thresholds...")
+            
+            # Check coordinate tap success logging
+            if "Found {success_count} search indicator(s)" in jumbo_source:
+                print("   ✅ ENHANCED COORDINATE TAP LOGGING: Found success count logging")
+            else:
+                print("   ❌ ENHANCED COORDINATE TAP LOGGING: Missing success count logging")
+                return False
+            
+            # Check navigation validation logging
+            if "Found {search_indicators_found} search indicator(s)" in validate_source:
+                print("   ✅ ENHANCED NAVIGATION LOGGING: Found search indicators count logging")
+            else:
+                print("   ❌ ENHANCED NAVIGATION LOGGING: Missing search indicators count logging")
+                return False
+            
+            # Test 4: Verify more lenient success detection logic
+            print("   🔍 Testing more lenient success detection logic...")
+            
+            # Check that coordinate tap considers 1+ indicators as success
+            if "elif content_suggests_search:" in jumbo_source:
+                print("   ✅ LENIENT COORDINATE TAP LOGIC: Found content-based success detection")
+            else:
+                print("   ❌ LENIENT COORDINATE TAP LOGIC: Missing content-based success detection")
+                return False
+            
+            # Check that navigation validation considers 1+ indicators as success
+            if "SEARCH SUCCESS: Found {search_indicators_found} search indicator(s)" in validate_source:
+                print("   ✅ LENIENT NAVIGATION LOGIC: Found lenient search success detection")
+            else:
+                print("   ❌ LENIENT NAVIGATION LOGIC: Missing lenient search success detection")
+                return False
+            
+            # Test 5: Verify integration between coordinate tap and validation flow
+            print("   🔍 Testing integration between coordinate tap and validation flow...")
+            
+            # Check that coordinate tap calls validation
+            if "return await self._validate_jumbo_navigation()" in jumbo_source:
+                print("   ✅ COORDINATE TAP INTEGRATION: Found call to _validate_jumbo_navigation")
+            else:
+                print("   ❌ COORDINATE TAP INTEGRATION: Missing call to _validate_jumbo_navigation")
+                return False
+            
+            # Test 6: Verify specific search indicators are properly defined
+            print("   🔍 Testing search success indicators...")
+            
+            expected_search_indicators = [
+                "resultados", "productos", "filtrar", "ordenar",
+                "precio", "agregar", "disponible", "stock"
+            ]
+            
+            indicators_found = 0
+            for indicator in expected_search_indicators:
+                if f'"{indicator}"' in jumbo_source:
+                    indicators_found += 1
+                    print(f"   ✅ Found search indicator: '{indicator}'")
+            
+            if indicators_found >= 6:
+                print(f"   ✅ SEARCH INDICATORS: Found {indicators_found}/{len(expected_search_indicators)} expected indicators")
+            else:
+                print(f"   ❌ SEARCH INDICATORS: Only found {indicators_found}/{len(expected_search_indicators)} expected indicators")
+                return False
+            
+            # Test 7: Verify coordinate tap success detection with 1 indicator scenario
+            print("   🔍 Testing coordinate tap 3 scenario (1 search indicator should trigger success)...")
+            
+            # Check the specific logic that handles the user's example case
+            coordinate_tap_logic = [
+                "coordinate tap {i} SUCCESS: Found {success_count} search indicator(s)",
+                "content_suggests_search = success_count >= 1",
+                "elif content_suggests_search:"
+            ]
+            
+            logic_found = 0
+            for logic_pattern in coordinate_tap_logic:
+                if logic_pattern in jumbo_source:
+                    logic_found += 1
+                    print(f"   ✅ Found coordinate tap logic: '{logic_pattern[:50]}...'")
+            
+            if logic_found >= 3:
+                print("   ✅ COORDINATE TAP 3 SCENARIO: Logic properly handles 1 search indicator as success")
+            else:
+                print("   ❌ COORDINATE TAP 3 SCENARIO: Missing logic for 1 search indicator success")
+                return False
+            
+            # Test 8: Verify the system will proceed with extraction instead of failing
+            print("   🔍 Testing that system proceeds with extraction on success...")
+            
+            # Check that successful coordinate tap leads to extraction
+            if "search_button_found = True" in jumbo_source and "break" in jumbo_source:
+                print("   ✅ EXTRACTION FLOW: System breaks out of coordinate tap loop on success")
+            else:
+                print("   ❌ EXTRACTION FLOW: Missing success handling in coordinate tap loop")
+                return False
+            
+            # Check that validation success leads to extraction
+            if "return True" in validate_source:
+                print("   ✅ VALIDATION FLOW: Navigation validation returns True on success")
+            else:
+                print("   ❌ VALIDATION FLOW: Missing success return in navigation validation")
+                return False
+            
+            print("✅ Lowered threshold success detection logic test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing lowered threshold success detection: {e}")
+            return False
+
     def test_fixed_price_parsing_logic(self):
         """Test the fixed price parsing logic to ensure each price element is parsed correctly"""
         print("\n🔍 Testing Fixed Price Parsing Logic...")
