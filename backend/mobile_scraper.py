@@ -740,11 +740,11 @@ class MobileAppScraper:
                     found_home_indicators.append(indicator)
                     print(f"   🏠 Found home indicator: '{indicator}'")
             
-            # ENHANCED decision logic
+            # ENHANCED decision logic (LOWERED THRESHOLDS)
             print(f"   📊 Analysis: {search_indicators_found} search indicators, {home_indicators_found} home indicators")
             
-            if search_indicators_found >= 2:
-                print(f"   ✅ SEARCH SUCCESS: Found {search_indicators_found} search indicators - on search results")
+            if search_indicators_found >= 1:  # LOWERED from 2 to 1
+                print(f"   ✅ SEARCH SUCCESS: Found {search_indicators_found} search indicator(s) - on search results")
                 print(f"   🎯 Search indicators: {', '.join(found_indicators[:3])}")
                 return True
             elif home_indicators_found >= 3:
@@ -753,15 +753,15 @@ class MobileAppScraper:
                 return False
             elif current_activity != ".features.main.activity.MainActivity":
                 print(f"   ✅ ACTIVITY CHANGE: Different activity - likely search results")
-                return True
+                return True  
             else:
                 print(f"   ⚠️ UNCLEAR STATE: MainActivity with {search_indicators_found} search + {home_indicators_found} home indicators")
-                # If we have at least 1 search indicator and no strong home indicators, assume success
-                if search_indicators_found >= 1 and home_indicators_found <= 1:
-                    print(f"   ✅ BENEFIT OF DOUBT: Some search indicators present - proceeding with extraction")
+                # Even more lenient - if no strong home page indicators, assume success
+                if home_indicators_found <= 2:
+                    print(f"   ✅ LENIENT SUCCESS: Few home indicators ({home_indicators_found}) - proceeding with extraction")
                     return True
                 else:
-                    print(f"   ❌ LIKELY FAILURE: Too many home indicators or no search indicators")
+                    print(f"   ❌ LIKELY FAILURE: Too many home indicators ({home_indicators_found})")
                     return False
                 
         except Exception as e:
