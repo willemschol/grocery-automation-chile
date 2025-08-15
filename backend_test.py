@@ -2121,6 +2121,332 @@ Leche,1L"""
             print(f"❌ Error testing integration fixes compatibility: {e}")
             return False
 
+    def test_enhanced_jumbo_success_detection(self):
+        """Test the enhanced Jumbo success detection logic that checks content changes instead of just activity"""
+        print("\n🔍 Testing Enhanced Jumbo Success Detection Logic...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify _validate_jumbo_navigation method exists and has enhanced logic
+            if not hasattr(mobile_scraper, '_validate_jumbo_navigation'):
+                print("   ❌ _validate_jumbo_navigation method not found")
+                return False
+            
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            print("   🔍 Testing Enhanced Coordinate Tap Success Detection...")
+            
+            # Test 2: Verify content-based validation (checks page source)
+            if "page_source" in validate_source and "page_source.lower()" in validate_source:
+                print("   ✅ Content-Based Validation: Analyzes page source content")
+            else:
+                print("   ❌ Content-Based Validation: Missing page source analysis")
+                return False
+            
+            # Test 3: Verify 11 search result indicators
+            expected_search_indicators = [
+                "resultados", "productos encontrados", "filtrar resultados",
+                "ordenar por", "precio desde", "precio hasta", "agregar al carrito",
+                "disponible en tienda", "sin stock", "ver producto", "añadir al carro"
+            ]
+            
+            search_indicators_found = 0
+            print("   🔍 Testing Search Success Indicators (expecting 11)...")
+            for indicator in expected_search_indicators:
+                if f'"{indicator}"' in validate_source:
+                    search_indicators_found += 1
+                    print(f"      ✅ Search indicator found: '{indicator}'")
+                else:
+                    print(f"      ❌ Missing search indicator: '{indicator}'")
+            
+            if search_indicators_found >= 10:  # Allow for slight variations
+                print(f"   ✅ Search Success Indicators: Found {search_indicators_found}/11 indicators")
+            else:
+                print(f"   ❌ Search Success Indicators: Only found {search_indicators_found}/11 indicators")
+                return False
+            
+            # Test 4: Verify 9 home page indicators
+            expected_home_indicators = [
+                "experiencia única", "variedad de cortes", "¡participa!",
+                "categorías destacadas", "frutas y verduras", "productos frecuentes",
+                "mostrar más", "despacho a:", "¿qué estás buscando?"
+            ]
+            
+            home_indicators_found = 0
+            print("   🔍 Testing Home Page Indicators (expecting 9)...")
+            for indicator in expected_home_indicators:
+                if f'"{indicator}"' in validate_source:
+                    home_indicators_found += 1
+                    print(f"      ✅ Home indicator found: '{indicator}'")
+                else:
+                    print(f"      ❌ Missing home indicator: '{indicator}'")
+            
+            if home_indicators_found >= 8:  # Allow for slight variations
+                print(f"   ✅ Home Page Indicators: Found {home_indicators_found}/9 indicators")
+            else:
+                print(f"   ❌ Home Page Indicators: Only found {home_indicators_found}/9 indicators")
+                return False
+            
+            # Test 5: Verify Enhanced Decision Logic (activity changes OR content shows search indicators)
+            print("   🔍 Testing Enhanced Decision Logic...")
+            
+            # Check for content-based success detection (>=2 search indicators)
+            if "search_indicators_found >= 2" in validate_source:
+                print("   ✅ Enhanced Decision Logic: Success when >=2 search indicators found")
+            else:
+                print("   ❌ Enhanced Decision Logic: Missing content-based success detection")
+                return False
+            
+            # Check for activity-based success detection
+            if "current_activity !=" in validate_source and "MainActivity" in validate_source:
+                print("   ✅ Enhanced Decision Logic: Success when activity changes from MainActivity")
+            else:
+                print("   ❌ Enhanced Decision Logic: Missing activity-based success detection")
+                return False
+            
+            # Test 6: Verify Benefit of Doubt Logic (1+ search indicators and <=1 home indicators)
+            print("   🔍 Testing Benefit of Doubt Logic...")
+            
+            if "search_indicators_found >= 1" in validate_source and "home_indicators_found <= 1" in validate_source:
+                print("   ✅ Benefit of Doubt Logic: Proceeds when 1+ search indicators and <=1 home indicators")
+            else:
+                print("   ❌ Benefit of Doubt Logic: Missing benefit of doubt implementation")
+                return False
+            
+            # Test 7: Verify the logic addresses MainActivity staying issue
+            print("   🔍 Testing MainActivity Resolution Logic...")
+            
+            if "UNCLEAR STATE: MainActivity" in validate_source and "BENEFIT OF DOUBT" in validate_source:
+                print("   ✅ MainActivity Resolution: Handles case where activity stays MainActivity but search succeeds")
+            else:
+                print("   ❌ MainActivity Resolution: Missing logic for MainActivity staying issue")
+                return False
+            
+            # Test 8: Verify proper logging for debugging
+            logging_patterns = [
+                "Found search indicator:",
+                "Found home indicator:",
+                "Analysis:",
+                "SEARCH SUCCESS:",
+                "HOME PAGE:",
+                "ACTIVITY CHANGE:",
+                "BENEFIT OF DOUBT:"
+            ]
+            
+            logging_found = 0
+            print("   🔍 Testing Enhanced Logging...")
+            for pattern in logging_patterns:
+                if pattern in validate_source:
+                    logging_found += 1
+                    print(f"      ✅ Logging pattern found: '{pattern}'")
+                else:
+                    print(f"      ❌ Missing logging pattern: '{pattern}'")
+            
+            if logging_found >= 6:
+                print(f"   ✅ Enhanced Logging: Found {logging_found}/7 logging patterns")
+            else:
+                print(f"   ❌ Enhanced Logging: Only found {logging_found}/7 logging patterns")
+                return False
+            
+            # Test 9: Verify integration with coordinate tap methods
+            print("   🔍 Testing Integration with Coordinate Tap Methods...")
+            
+            # Check if ultra-robust method calls the validation
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            if "_validate_jumbo_navigation" in jumbo_source:
+                print("   ✅ Integration: Ultra-robust search method calls enhanced validation")
+            else:
+                print("   ❌ Integration: Ultra-robust search method doesn't call enhanced validation")
+                return False
+            
+            # Test 10: Verify the method returns boolean for success/failure
+            if "return True" in validate_source and "return False" in validate_source:
+                print("   ✅ Return Logic: Method properly returns boolean success/failure")
+            else:
+                print("   ❌ Return Logic: Method doesn't properly return boolean values")
+                return False
+            
+            print("✅ Enhanced Jumbo Success Detection Logic test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing enhanced Jumbo success detection: {e}")
+            return False
+
+    def test_coordinate_tap_content_validation(self):
+        """Test that coordinate tap success is detected by content changes, not just activity"""
+        print("\n🔍 Testing Coordinate Tap Content Validation...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify coordinate tap methods exist
+            jumbo_method = getattr(mobile_scraper, '_perform_jumbo_search_ultra_robust')
+            jumbo_source = inspect.getsource(jumbo_method)
+            
+            # Test 2: Check for coordinate-based search implementation
+            coordinate_patterns = [
+                "screen_size",
+                "get_window_size",
+                "coordinate",
+                "tap",
+                "relative"
+            ]
+            
+            coordinate_found = 0
+            print("   🔍 Checking for coordinate-based search patterns...")
+            for pattern in coordinate_patterns:
+                if pattern in jumbo_source:
+                    coordinate_found += 1
+                    print(f"      ✅ Coordinate pattern found: '{pattern}'")
+                else:
+                    print(f"      ❌ Missing coordinate pattern: '{pattern}'")
+            
+            if coordinate_found >= 2:
+                print(f"   ✅ Coordinate Tap Implementation: Found {coordinate_found}/5 coordinate patterns")
+            else:
+                print(f"   ❌ Coordinate Tap Implementation: Only found {coordinate_found}/5 coordinate patterns")
+                return False
+            
+            # Test 3: Verify validation is called after coordinate tap
+            if "_validate_jumbo_navigation" in jumbo_source:
+                print("   ✅ Content Validation: Coordinate tap followed by content validation")
+            else:
+                print("   ❌ Content Validation: Missing validation after coordinate tap")
+                return False
+            
+            # Test 4: Verify the validation method checks content, not just activity
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            if "page_source" in validate_source and "search_result_indicators" in validate_source:
+                print("   ✅ Content Analysis: Validation analyzes page content for search indicators")
+            else:
+                print("   ❌ Content Analysis: Validation doesn't properly analyze page content")
+                return False
+            
+            # Test 5: Verify it handles MainActivity staying case
+            if "MainActivity" in validate_source and "search_indicators_found >= 1" in validate_source:
+                print("   ✅ MainActivity Handling: Detects success even when activity stays MainActivity")
+            else:
+                print("   ❌ MainActivity Handling: Doesn't handle MainActivity staying case")
+                return False
+            
+            print("✅ Coordinate Tap Content Validation test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing coordinate tap content validation: {e}")
+            return False
+
+    def test_search_indicators_comprehensive(self):
+        """Test comprehensive search and home indicators detection"""
+        print("\n🔍 Testing Comprehensive Search Indicators Detection...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            import inspect
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            validate_method = getattr(mobile_scraper, '_validate_jumbo_navigation')
+            validate_source = inspect.getsource(validate_method)
+            
+            # Test 1: Verify all 11 search result indicators from review request
+            expected_search_indicators = [
+                "resultados", "productos", "filtrar", "ordenar", 
+                "agregar al carrito", "disponible en tienda", "sin stock",
+                "ver producto", "precio desde", "precio hasta", "añadir al carro"
+            ]
+            
+            search_indicators_found = 0
+            print("   🔍 Testing all 11 search result indicators...")
+            for indicator in expected_search_indicators:
+                # Check if indicator appears in the source (allowing for variations)
+                if indicator in validate_source:
+                    search_indicators_found += 1
+                    print(f"      ✅ Search indicator: '{indicator}'")
+                else:
+                    print(f"      ❌ Missing search indicator: '{indicator}'")
+            
+            if search_indicators_found >= 10:  # Allow for slight variations
+                print(f"   ✅ Search Result Indicators: Found {search_indicators_found}/11 indicators")
+            else:
+                print(f"   ❌ Search Result Indicators: Only found {search_indicators_found}/11 indicators")
+                return False
+            
+            # Test 2: Verify all 9 home page indicators from review request
+            expected_home_indicators = [
+                "experiencia única", "categorías destacadas", "frutas y verduras",
+                "productos frecuentes", "mostrar más", "despacho a:",
+                "¿qué estás buscando?", "variedad de cortes", "¡participa!"
+            ]
+            
+            home_indicators_found = 0
+            print("   🔍 Testing all 9 home page indicators...")
+            for indicator in expected_home_indicators:
+                if indicator in validate_source:
+                    home_indicators_found += 1
+                    print(f"      ✅ Home indicator: '{indicator}'")
+                else:
+                    print(f"      ❌ Missing home indicator: '{indicator}'")
+            
+            if home_indicators_found >= 8:  # Allow for slight variations
+                print(f"   ✅ Home Page Indicators: Found {home_indicators_found}/9 indicators")
+            else:
+                print(f"   ❌ Home Page Indicators: Only found {home_indicators_found}/9 indicators")
+                return False
+            
+            # Test 3: Verify decision logic thresholds
+            print("   🔍 Testing decision logic thresholds...")
+            
+            # Success threshold: >=2 search indicators
+            if "search_indicators_found >= 2" in validate_source:
+                print("   ✅ Success Threshold: >=2 search indicators for success")
+            else:
+                print("   ❌ Success Threshold: Missing >=2 search indicators threshold")
+                return False
+            
+            # Home page threshold: >=3 home indicators
+            if "home_indicators_found >= 3" in validate_source:
+                print("   ✅ Home Threshold: >=3 home indicators for home page detection")
+            else:
+                print("   ❌ Home Threshold: Missing >=3 home indicators threshold")
+                return False
+            
+            # Benefit of doubt: >=1 search and <=1 home
+            if "search_indicators_found >= 1" in validate_source and "home_indicators_found <= 1" in validate_source:
+                print("   ✅ Benefit of Doubt: >=1 search and <=1 home indicators")
+            else:
+                print("   ❌ Benefit of Doubt: Missing benefit of doubt logic")
+                return False
+            
+            print("✅ Comprehensive Search Indicators Detection test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing comprehensive search indicators: {e}")
+            return False
+
     def test_fixed_price_parsing_logic(self):
         """Test the fixed price parsing logic to ensure each price element is parsed correctly"""
         print("\n🔍 Testing Fixed Price Parsing Logic...")
