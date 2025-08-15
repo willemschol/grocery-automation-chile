@@ -2569,7 +2569,7 @@ Leche,1L"""
             
             # Check the specific logic that handles the user's example case
             coordinate_tap_logic = [
-                "coordinate tap {i} SUCCESS: Found {success_count} search indicator(s)",
+                "Coordinate tap {i} SUCCESS: Found {success_count} search indicator(s)",
                 "content_suggests_search = success_count >= 1",
                 "elif content_suggests_search:"
             ]
