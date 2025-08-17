@@ -132,6 +132,42 @@ backend:
         agent: "testing"
         comment: "COMPREHENSIVE FIXED PRICE PARSING LOGIC TESTING COMPLETE: ✅ All 7/7 comprehensive tests passed successfully for the fixed price parsing logic. ✅ SPECIFIC PRICE ELEMENT PARSING: _extract_product_from_group_corrected now accepts target_price_elem parameter and parses the SPECIFIC price element being processed instead of just the first price in the group. ✅ TARGET PRICE PROCESSING: When target_price_elem is provided, the method parses that specific price text (e.g., '$3.990', '$5.790', 'Ahorra $1.800', '2 x $1.890') instead of defaulting to the first price. ✅ FALLBACK LOGIC: If target price parsing fails, the system correctly falls back to processing price_candidates as before. ✅ ENHANCED LOGGING: System logs which specific price is being parsed for each element with detailed debugging output. ✅ REGRESSION PREVENTION: Both Jumbo and Lider extraction methods (_extract_jumbo_products, _extract_lider_products) now pass the target_price_elem parameter correctly. ✅ INTEGRATION TESTING: Mobile automation correctly calls the updated method signatures through search_jumbo_app and search_lider_app. ✅ INDIVIDUAL PRICE PARSING: Each price element ('$3.990', '$5.790', 'Ahorra $1.800', '2 x $1.890') is now parsed as its own individual price rather than all being parsed as the first price in the group, completely eliminating the duplicate product issue reported by the user. The fixed price parsing logic ensures that each price element produces different product entries with their correct respective prices."
 
+  - task: "Enhanced Product Name Extraction with Scoring System"
+    implemented: true
+    working: true
+    file: "backend/mobile_scraper.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "ENHANCED PRODUCT NAME EXTRACTION TESTING COMPLETE: ✅ All enhanced name extraction features verified successfully. ✅ ENHANCED SCORING SYSTEM: Verified that names >40 chars get +25 points (e.g., 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc' scored 138 points), names >20 chars get +15 points, and names >10 chars get +5 points. ✅ GENERIC BRAND PENALTY: Confirmed that generic brand names like 'Coca-Cola', 'Pepsi', 'Sprite' get -15 points penalty, ensuring longer descriptive names are prioritized. ✅ PACKAGING DESCRIPTORS BONUS: Verified that packaging descriptors ('pack', 'unidades', 'ml', 'gr', 'kg', 'lt', 'lata', 'botella', 'sachét') get +12 points bonus. ✅ SIZE PATTERN BONUS: Confirmed that size patterns (regex: r'\d+\s*(ml|gr|kg|lt|cc)', r'\d+\s*un', r'pack\s*\d+') get +15 points bonus. ✅ PRODUCT KEYWORDS BONUS: Verified that product keywords ('coca', 'pepsi', 'bebida', 'agua', 'jugo', 'leche', etc.) get +8 points bonus. ✅ UI ELEMENTS PENALTY: Confirmed that UI elements ('agregar', 'ver', 'más', 'opciones', 'compartir', 'favorito') get -20 points penalty. ✅ SCORING INTEGRATION: The _extract_product_name_and_size_corrected method correctly implements the enhanced scoring system and returns the highest-scoring name. The enhanced name extraction system successfully prioritizes longer, more descriptive product names over short brand names, addressing the specific user issue where 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc' should be extracted instead of 'Coca-Cola'."
+
+  - task: "Smart Price Filtering with Exclusion Patterns"
+    implemented: true
+    working: true
+    file: "backend/mobile_scraper.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "SMART PRICE FILTERING TESTING COMPLETE: ✅ All smart price filtering features verified successfully. ✅ EXCLUDED PATTERNS: Verified that payment method and crossed-out prices are correctly excluded - 'Paga $3.890' (payment method), 'Antes $5.990' (crossed out), 'Normal $4.490' (original when offer) are all filtered out using regex patterns (r'paga\s*\$\d+', r'antes\s*\$\d+', r'normal\s*\$\d+'). ✅ PRIORITY PATTERNS: Confirmed that main prices and promotions are correctly prioritized - '$4.090' (main price), '2 x $1.890' (promotion), 'Lleva 2 por $1.990' (promotion), '$1.190 c/u' (unit price), 'Ahorra $1.800' (savings) are all detected using priority regex patterns. ✅ REGEX VALIDATION: Verified that all regex patterns work correctly with case-insensitive matching (re.IGNORECASE flag). ✅ CASE INSENSITIVE: Confirmed that filtering works with different cases ('paga $1.200', 'ANTES $2.500'). ✅ PRIORITY REGEX PATTERNS: Verified priority patterns work correctly - r'^\$\d+\.\d+$' (decimal prices), r'lleva\s*\d+\s*por\s*\$\d+' (promotions), r'\$\d+\s*c/u' (unit prices), r'ahorra\s*\$\d+' (savings). ✅ SECONDARY PATTERNS: Confirmed secondary patterns provide fallback detection for edge cases. ✅ INTEGRATION: The _looks_like_price method correctly implements smart filtering and is integrated with both Jumbo and Lider product extraction. The smart price filtering system successfully excludes irrelevant prices like payment methods and crossed-out prices while prioritizing main prices and promotions, addressing the specific user issue where '$4.090' should be extracted and 'Paga $3.890' and '$5.990' should be filtered out."
+
+  - task: "Jumbo-Specific Extraction Integration"
+    implemented: true
+    working: true
+    file: "backend/mobile_scraper.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "JUMBO-SPECIFIC EXTRACTION INTEGRATION TESTING COMPLETE: ✅ All integration features verified successfully using simulated user screenshot data. ✅ USER SCENARIO SIMULATION: Successfully tested the exact scenario from user's screenshot - extracted 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc' instead of 'Coca-Cola' and extracted '$4.090' while filtering out 'Paga $3.890' and 'Antes $5.990'. ✅ NAME EXTRACTION INTEGRATION: Confirmed that enhanced name scoring works correctly in the complete extraction process - the longest descriptive name (score: 138) was selected over the generic brand name (score: -7). ✅ PRICE FILTERING INTEGRATION: Verified that smart price filtering works correctly in the complete extraction process - main price '$4.090' was detected while payment method 'Paga $3.890' and crossed-out price 'Antes $5.990' were excluded. ✅ COMPLETE EXTRACTION PROCESS: The _extract_product_from_group_corrected method successfully combines enhanced name extraction and smart price filtering to produce correct results: name='Pack 6 un. Bebida Coca Cola Zero Lata 350 cc', price=$4090.0. ✅ MULTIPLE SCENARIOS: Tested integration with various scenarios including promotional pricing ('2 x $1.890'), unit pricing ('$1.190 c/u'), and size information extraction. ✅ CROSS-STORE COMPATIBILITY: Integration works correctly for both Jumbo and Lider stores. The Jumbo-specific extraction integration successfully addresses the user's specific issues by combining enhanced name extraction (prioritizing descriptive names) with smart price filtering (excluding irrelevant prices) in a unified extraction process."
+
   - task: "Excel Export Functionality"
     implemented: true
     working: true
