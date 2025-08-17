@@ -1182,55 +1182,57 @@ class MobileAppScraper:
         return products
     
     def _looks_like_price(self, text: str) -> bool:
-        """Check if text looks like a price - BROADENED patterns for better detection"""
+        """Check if text looks like a price - SMART filtering to avoid irrelevant prices"""
         if not text:
             return False
         
         text_clean = text.strip()
         
-        # BROADENED price patterns to catch more price formats
-        price_patterns = [
-            # Traditional patterns
-            r'\$\d+',  # $123
-            r'\d+\.\d+',  # 1.990 (Chilean format)
-            r'\d+,\d+',  # 1,990
-            r'\d+\s*x\s*\$\d+',  # 2 x $1000 (promotion format)
-            r'\d+\s*pesos',  # 1000 pesos
-            
-            # BROADENED patterns for mobile apps
-            r'\$\s*\d+',  # $ 123 (with space)
-            r'\d+\s*\$',  # 123$ or 123 $
-            r'^\d{3,}$',  # Any number with 3+ digits (likely price)
-            r'\d+\s*CLP',  # Chilean pesos format
-            r'\d+\s*clp',  # lowercase Chilean pesos
-            r'precio.*\d+',  # "precio 1990" or similar
-            r'\d+\s*por\s*\$',  # "2 por $1000"
-            r'ahorra.*\$\d+',  # "Ahorra $500"
-            r'antes.*\$\d+',  # "Antes $2000"
-            r'ahora.*\$\d+',  # "Ahora $1500"
-            r'\d+\s*c/u',  # "1500 c/u" (cada uno)
-            r'\$\d+\s*c/u',  # "$1500 c/u"
-            r'lleva.*\$\d+',  # "Lleva 2 por $3000"
-            r'\d+\s*pack',  # "1500 pack"
-            r'oferta.*\d+',  # "Oferta 1990"
-            r'promo.*\d+',  # "Promo 1500"
-            
-            # Very broad patterns (any text with currency symbols near numbers)
-            r'.*\$.*\d+.*',  # Any text with $ and numbers
-            r'.*\d+.*\$.*',  # Any text with numbers and $
+        # IMMEDIATELY EXCLUDE payment method and crossed-out prices
+        excluded_patterns = [
+            r'paga\s*\$\d+',  # "Paga $3.890" - payment method prices
+            r'antes\s*\$\d+', # "Antes $5.990" - old prices (usually crossed out)
+            r'normal\s*\$\d+', # "Normal $4.490" - original prices when there's an offer
         ]
         
-        for pattern in price_patterns:
+        for pattern in excluded_patterns:
             if re.search(pattern, text_clean, re.IGNORECASE):
-                print(f"   💰 Price pattern matched: '{text_clean}' with pattern: {pattern}")
+                print(f"   🚫 EXCLUDED price pattern: '{text_clean}' (payment/crossed-out price)")
+                return False
+        
+        # PRIORITIZE main prices and promotional prices
+        priority_patterns = [
+            r'^\$\d{3,5}$',  # Simple prices like "$4.090", "$2.990"
+            r'^\$\d+\.\d+$', # Decimal prices like "$4.090"
+            r'\d+\s*x\s*\$\d+',  # Promotional prices like "2 x $1.890", "Lleva 2 por $1.990"
+            r'lleva\s*\d+\s*por\s*\$\d+', # "Lleva 2 por $1.990"
+            r'\$\d+\s*c/u',  # Unit prices like "$1.190 c/u"
+            r'ahorra\s*\$\d+', # Savings like "Ahorra $1.800"
+        ]
+        
+        for pattern in priority_patterns:
+            if re.search(pattern, text_clean, re.IGNORECASE):
+                print(f"   💰 PRIORITY price detected: '{text_clean}' with pattern: {pattern}")
                 return True
         
-        # Additional check: if text contains only digits and is reasonable price range
-        if re.match(r'^\d{3,6}$', text_clean):  # 3-6 digits (reasonable Chilean price range)
-            price_value = int(text_clean)
-            if 100 <= price_value <= 999999:  # Reasonable price range
-                print(f"   💰 Numeric price detected: '{text_clean}' ({price_value})")
-                return True
+        # Secondary patterns (less priority but still valid)
+        secondary_patterns = [
+            r'\$\d+',  # Any price with $
+            r'\d+\s*pesos',  # pesos format
+            r'^\d{3,6}$',  # 3-6 digits (reasonable Chilean price range)
+        ]
+        
+        for pattern in secondary_patterns:
+            if re.search(pattern, text_clean, re.IGNORECASE):
+                # Additional validation for secondary patterns
+                if re.match(r'^\d{3,6}$', text_clean):  # Pure numbers
+                    price_value = int(text_clean)
+                    if 100 <= price_value <= 999999:  # Reasonable price range
+                        print(f"   💰 Secondary price detected: '{text_clean}' ({price_value})")
+                        return True
+                else:
+                    print(f"   💰 Secondary price detected: '{text_clean}' with pattern: {pattern}")
+                    return True
         
         return False
     
