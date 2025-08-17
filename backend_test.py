@@ -2816,8 +2816,356 @@ Leche,1L"""
             print(f"❌ Error testing fixed price parsing logic: {e}")
             return False
 
+    def test_enhanced_name_extraction_scoring(self):
+        """Test enhanced product name extraction with scoring system"""
+        print("\n🔍 Testing Enhanced Name Extraction Scoring System...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify enhanced scoring for longer names (>40 chars get +25 points)
+            test_names = [
+                "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc",  # Should get +25 for >40 chars
+                "Coca Cola Zero 2L",  # Should get +15 for >20 chars  
+                "Coca-Cola",  # Should get -15 penalty for generic brand name
+                "Bebida"  # Should get lower score
+            ]
+            
+            test_sizes = ["350 cc", "2L"]
+            
+            print("   🧪 Testing name scoring with different lengths...")
+            
+            # Test the scoring logic by calling the method
+            best_name = mobile_scraper._extract_product_name_and_size_corrected(test_names, test_sizes)
+            
+            # The longest, most descriptive name should win
+            if "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc" in best_name:
+                print("   ✅ Enhanced scoring correctly prioritized longest descriptive name")
+            else:
+                print(f"   ❌ Enhanced scoring failed - got '{best_name}' instead of longest name")
+                return False
+            
+            # Test 2: Verify penalty for generic brand names
+            generic_test_names = ["Coca-Cola", "Pepsi", "Sprite"]
+            generic_best = mobile_scraper._extract_product_name_and_size_corrected(generic_test_names, [])
+            
+            print(f"   🧪 Testing generic brand penalty - selected: '{generic_best}'")
+            
+            # Test 3: Verify bonus for packaging descriptors (+12 points)
+            descriptor_test_names = [
+                "Bebida con pack de 6 unidades",  # Should get +12 for 'pack' and 'unidades'
+                "Simple Bebida"  # Should get lower score
+            ]
+            
+            descriptor_best = mobile_scraper._extract_product_name_and_size_corrected(descriptor_test_names, [])
+            
+            if "pack" in descriptor_best.lower():
+                print("   ✅ Packaging descriptors correctly prioritized")
+            else:
+                print(f"   ❌ Packaging descriptors not prioritized - got '{descriptor_best}'")
+                return False
+            
+            # Test 4: Verify size pattern bonus (+15 points)
+            size_pattern_names = [
+                "Coca Cola 350ml Lata",  # Should get +15 for size pattern
+                "Coca Cola Regular"  # Should get lower score
+            ]
+            
+            size_pattern_best = mobile_scraper._extract_product_name_and_size_corrected(size_pattern_names, [])
+            
+            if "350ml" in size_pattern_best:
+                print("   ✅ Size patterns correctly prioritized")
+            else:
+                print(f"   ❌ Size patterns not prioritized - got '{size_pattern_best}'")
+                return False
+            
+            print("✅ Enhanced name extraction scoring test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing enhanced name extraction scoring: {e}")
+            return False
+
+    def test_smart_price_filtering_patterns(self):
+        """Test smart price filtering with exclusion and priority patterns"""
+        print("\n🔍 Testing Smart Price Filtering Patterns...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Verify EXCLUDED patterns (should return False)
+            excluded_prices = [
+                "Paga $3.890",  # Payment method
+                "Antes $5.990",  # Crossed out price
+                "Normal $4.490",  # Original price when there's offer
+                "paga $1.200",  # Case insensitive
+                "ANTES $2.500"  # Case insensitive
+            ]
+            
+            print("   🚫 Testing excluded price patterns...")
+            for price in excluded_prices:
+                is_price = mobile_scraper._looks_like_price(price)
+                if is_price:
+                    print(f"   ❌ FAILED: '{price}' should be excluded but was detected as price")
+                    return False
+                else:
+                    print(f"   ✅ EXCLUDED: '{price}' correctly filtered out")
+            
+            # Test 2: Verify PRIORITY patterns (should return True)
+            priority_prices = [
+                "$4.090",  # Main price
+                "$2.990",  # Simple price
+                "2 x $1.890",  # Promotion
+                "Lleva 2 por $1.990",  # Promotion
+                "$1.190 c/u",  # Unit price
+                "Ahorra $1.800"  # Savings
+            ]
+            
+            print("   💰 Testing priority price patterns...")
+            for price in priority_prices:
+                is_price = mobile_scraper._looks_like_price(price)
+                if not is_price:
+                    print(f"   ❌ FAILED: '{price}' should be detected as priority price")
+                    return False
+                else:
+                    print(f"   ✅ PRIORITY: '{price}' correctly detected as price")
+            
+            # Test 3: Verify regex patterns work correctly
+            import re
+            
+            # Test excluded patterns
+            excluded_patterns = [
+                r'paga\s*\$\d+',
+                r'antes\s*\$\d+', 
+                r'normal\s*\$\d+'
+            ]
+            
+            print("   🔍 Testing regex pattern matching...")
+            
+            test_excluded = "Paga $3.890"
+            for pattern in excluded_patterns:
+                if re.search(pattern, test_excluded, re.IGNORECASE):
+                    print(f"   ✅ Regex pattern '{pattern}' correctly matches '{test_excluded}'")
+                    break
+            else:
+                print(f"   ❌ No excluded regex patterns matched '{test_excluded}'")
+                return False
+            
+            # Test priority patterns
+            priority_patterns = [
+                r'^\$\d{3,5}$',
+                r'lleva\s*\d+\s*por\s*\$\d+',
+                r'\$\d+\s*c/u'
+            ]
+            
+            test_priority = "$4.090"
+            for pattern in priority_patterns:
+                if re.search(pattern, test_priority, re.IGNORECASE):
+                    print(f"   ✅ Regex pattern '{pattern}' correctly matches '{test_priority}'")
+                    break
+            else:
+                print(f"   ❌ No priority regex patterns matched '{test_priority}'")
+                return False
+            
+            print("✅ Smart price filtering patterns test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing smart price filtering patterns: {e}")
+            return False
+
+    def test_jumbo_specific_extraction_fixes(self):
+        """Test Jumbo-specific extraction fixes from user screenshot"""
+        print("\n🔍 Testing Jumbo-Specific Extraction Fixes...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test 1: Simulate the user's screenshot scenario
+            # Should extract "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc" instead of "Coca-Cola"
+            # Should extract "$4.090" and filter out "Paga $3.890" and "$5.990"
+            
+            simulated_elements = [
+                {'text': 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc', 'x': 100, 'y': 100, 'size': {}},
+                {'text': 'Coca-Cola', 'x': 105, 'y': 110, 'size': {}},
+                {'text': '$4.090', 'x': 110, 'y': 120, 'size': {}},
+                {'text': 'Paga $3.890', 'x': 115, 'y': 130, 'size': {}},
+                {'text': 'Antes $5.990', 'x': 120, 'y': 140, 'size': {}}
+            ]
+            
+            print("   🧪 Testing extraction from simulated user screenshot data...")
+            
+            # Test name extraction - should prefer the long descriptive name
+            name_candidates = [elem['text'] for elem in simulated_elements if not mobile_scraper._looks_like_price(elem['text'])]
+            size_candidates = []
+            
+            best_name = mobile_scraper._extract_product_name_and_size_corrected(name_candidates, size_candidates)
+            
+            if "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc" in best_name:
+                print("   ✅ Correctly extracted full descriptive name instead of brand name")
+            else:
+                print(f"   ❌ Failed to extract full name - got '{best_name}'")
+                return False
+            
+            # Test price filtering - should detect $4.090 and exclude payment/crossed-out prices
+            valid_prices = []
+            excluded_prices = []
+            
+            for elem in simulated_elements:
+                text = elem['text']
+                if mobile_scraper._looks_like_price(text):
+                    valid_prices.append(text)
+                elif any(pattern in text.lower() for pattern in ['paga', 'antes', 'normal']):
+                    excluded_prices.append(text)
+            
+            if "$4.090" in valid_prices:
+                print("   ✅ Correctly detected main price $4.090")
+            else:
+                print(f"   ❌ Failed to detect main price - valid prices: {valid_prices}")
+                return False
+            
+            if "Paga $3.890" not in valid_prices and "Antes $5.990" not in valid_prices:
+                print("   ✅ Correctly excluded payment method and crossed-out prices")
+            else:
+                print(f"   ❌ Failed to exclude irrelevant prices - valid prices: {valid_prices}")
+                return False
+            
+            # Test 2: Test the complete extraction process
+            target_price_elem = {'text': '$4.090', 'x': 110, 'y': 120, 'size': {}}
+            
+            product_info = mobile_scraper._extract_product_from_group_corrected(simulated_elements, "Jumbo", target_price_elem)
+            
+            if product_info:
+                print(f"   📦 Extracted product: {product_info['name']} - ${product_info['price']}")
+                
+                # Verify the extracted information matches expectations
+                if "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc" in product_info['name']:
+                    print("   ✅ Product name extraction working correctly")
+                else:
+                    print(f"   ❌ Product name extraction failed - got '{product_info['name']}'")
+                    return False
+                
+                if product_info['price'] == 4090.0:  # $4.090 = 4090 pesos
+                    print("   ✅ Price extraction working correctly")
+                else:
+                    print(f"   ❌ Price extraction failed - got {product_info['price']}")
+                    return False
+            else:
+                print("   ❌ Failed to extract product information from group")
+                return False
+            
+            print("✅ Jumbo-specific extraction fixes test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing Jumbo-specific extraction fixes: {e}")
+            return False
+
+    def test_integration_name_and_price_fixes(self):
+        """Test that enhanced name extraction and smart price filtering work together"""
+        print("\n🔍 Testing Integration of Name Extraction and Price Filtering...")
+        
+        try:
+            # Import and initialize mobile scraper
+            sys.path.append('/app/backend')
+            from mobile_scraper import MobileAppScraper
+            
+            mobile_scraper = MobileAppScraper()
+            print("✅ Mobile scraper imported successfully")
+            
+            # Test integration with multiple product scenarios
+            test_scenarios = [
+                {
+                    'name': 'Scenario 1: Long descriptive name with clean price',
+                    'elements': [
+                        {'text': 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc', 'x': 100, 'y': 100, 'size': {}},
+                        {'text': '$4.090', 'x': 110, 'y': 120, 'size': {}},
+                        {'text': 'Paga $3.890', 'x': 115, 'y': 130, 'size': {}}
+                    ],
+                    'expected_name_contains': 'Pack 6 un. Bebida Coca Cola Zero Lata 350 cc',
+                    'expected_price': 4090.0
+                },
+                {
+                    'name': 'Scenario 2: Promotional pricing with descriptive name',
+                    'elements': [
+                        {'text': 'Bebida Sprite Lata 350ml Pack 12 unidades', 'x': 100, 'y': 100, 'size': {}},
+                        {'text': '2 x $1.890', 'x': 110, 'y': 120, 'size': {}},
+                        {'text': 'Normal $2.500', 'x': 115, 'y': 130, 'size': {}}
+                    ],
+                    'expected_name_contains': 'Bebida Sprite Lata 350ml Pack 12 unidades',
+                    'expected_price': 1890.0  # Promotional price should be parsed correctly
+                },
+                {
+                    'name': 'Scenario 3: Unit pricing with size information',
+                    'elements': [
+                        {'text': 'Leche Entera 1L Marca Premium', 'x': 100, 'y': 100, 'size': {}},
+                        {'text': '$1.190 c/u', 'x': 110, 'y': 120, 'size': {}},
+                        {'text': 'Antes $1.500', 'x': 115, 'y': 130, 'size': {}}
+                    ],
+                    'expected_name_contains': 'Leche Entera 1L Marca Premium',
+                    'expected_price': 1190.0
+                }
+            ]
+            
+            for scenario in test_scenarios:
+                print(f"   🧪 Testing {scenario['name']}...")
+                
+                # Find the price element to use as target
+                target_price_elem = None
+                for elem in scenario['elements']:
+                    if mobile_scraper._looks_like_price(elem['text']) and not any(pattern in elem['text'].lower() for pattern in ['paga', 'antes', 'normal']):
+                        target_price_elem = elem
+                        break
+                
+                if not target_price_elem:
+                    print(f"   ❌ No valid price element found in {scenario['name']}")
+                    return False
+                
+                # Extract product information
+                product_info = mobile_scraper._extract_product_from_group_corrected(scenario['elements'], "Test", target_price_elem)
+                
+                if not product_info:
+                    print(f"   ❌ Failed to extract product info for {scenario['name']}")
+                    return False
+                
+                # Verify name extraction
+                if scenario['expected_name_contains'] in product_info['name']:
+                    print(f"   ✅ Name extraction correct: '{product_info['name']}'")
+                else:
+                    print(f"   ❌ Name extraction failed - expected '{scenario['expected_name_contains']}', got '{product_info['name']}'")
+                    return False
+                
+                # Verify price extraction
+                if abs(product_info['price'] - scenario['expected_price']) < 0.01:
+                    print(f"   ✅ Price extraction correct: ${product_info['price']}")
+                else:
+                    print(f"   ❌ Price extraction failed - expected ${scenario['expected_price']}, got ${product_info['price']}")
+                    return False
+            
+            print("✅ Integration of name extraction and price filtering test passed")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error testing integration of name and price fixes: {e}")
+            return False
+
 def main():
-    print("🚀 Starting Fixed Price Parsing Logic Tests")
+    print("🚀 Starting Enhanced Name Extraction and Smart Price Filtering Tests")
     print("=" * 80)
     
     tester = GroceryAutomationTester()
@@ -2827,8 +3175,32 @@ def main():
         print("❌ Health check failed - stopping tests")
         return 1
     
-    # Test 2: Fixed Price Parsing Logic (PRIMARY FOCUS)
-    print("\n🎯 Testing Fixed Price Parsing Logic (PRIMARY FOCUS)")
+    # Test 2: Enhanced Name Extraction Scoring (NEW - PRIMARY FOCUS)
+    print("\n🎯 Testing Enhanced Name Extraction Scoring (NEW - PRIMARY FOCUS)")
+    if not tester.test_enhanced_name_extraction_scoring():
+        print("❌ Enhanced name extraction scoring test failed")
+        return 1
+    
+    # Test 3: Smart Price Filtering Patterns (NEW - PRIMARY FOCUS)
+    print("\n🎯 Testing Smart Price Filtering Patterns (NEW - PRIMARY FOCUS)")
+    if not tester.test_smart_price_filtering_patterns():
+        print("❌ Smart price filtering patterns test failed")
+        return 1
+    
+    # Test 4: Jumbo-Specific Extraction Fixes (NEW - PRIMARY FOCUS)
+    print("\n🎯 Testing Jumbo-Specific Extraction Fixes (NEW - PRIMARY FOCUS)")
+    if not tester.test_jumbo_specific_extraction_fixes():
+        print("❌ Jumbo-specific extraction fixes test failed")
+        return 1
+    
+    # Test 5: Integration Testing (NEW - PRIMARY FOCUS)
+    print("\n🎯 Testing Integration of Name Extraction and Price Filtering (NEW - PRIMARY FOCUS)")
+    if not tester.test_integration_name_and_price_fixes():
+        print("❌ Integration of name and price fixes test failed")
+        return 1
+    
+    # Test 6: Fixed Price Parsing Logic (EXISTING)
+    print("\n🔧 Testing Fixed Price Parsing Logic (EXISTING)")
     if not tester.test_fixed_price_parsing_logic():
         print("❌ Fixed price parsing logic test failed")
         return 1
