@@ -2963,7 +2963,7 @@ Leche,1L"""
             
             # Test priority patterns
             priority_patterns = [
-                r'^\$\d{3,5}$',
+                r'^\$\d+\.\d+$',  # Decimal prices like "$4.090"
                 r'lleva\s*\d+\s*por\s*\$\d+',
                 r'\$\d+\s*c/u'
             ]
