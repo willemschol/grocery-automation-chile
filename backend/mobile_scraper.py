@@ -1452,68 +1452,78 @@ class MobileAppScraper:
             return result
     
     def _extract_product_name_and_size_corrected(self, name_candidates: List[str], size_candidates: List[str]) -> str:
-        """Extract the best product name with improved logic"""
+        """Extract the best product name with improved logic - prioritize longer, more descriptive names"""
         try:
             if not name_candidates:
                 return "Unknown Product"
             
-            # Filter and rank name candidates
+            # Filter and rank name candidates with ENHANCED scoring
             scored_names = []
             
             for name in name_candidates:
                 score = 0
                 name_lower = name.lower().strip()
                 
+                # MAJOR bonus for longer names (more descriptive)
+                if len(name) > 40:  # Very descriptive names like "Pack 6 un. Bebida Coca Cola Zero Lata 350 cc"
+                    score += 25
+                elif len(name) > 20:  # Moderately descriptive names
+                    score += 15
+                elif len(name) > 10:  # Short but useful names
+                    score += 5
+                elif len(name) < 5:  # Very short names like "Coca-Cola" - lower priority
+                    score -= 10
+                
                 # Bonus for product keywords
                 product_keywords = [
                     'coca', 'pepsi', 'sprite', 'fanta', 'bebida', 'agua', 'jugo', 
                     'leche', 'yogurt', 'pan', 'arroz', 'fideos', 'pasta', 'aceite',
                     'azúcar', 'sal', 'detergente', 'jabón', 'shampoo', 'crema',
-                    'galletas', 'chocolate', 'cerveza', 'vino'
+                    'galletas', 'chocolate', 'cerveza', 'vino', 'pack', 'lata', 'botella'
                 ]
                 
                 for keyword in product_keywords:
                     if keyword in name_lower:
-                        score += 10
-                        break
+                        score += 8  # Reduced from 10 to 8 to prioritize length over keywords
                 
-                # Bonus for reasonable length
-                if 5 <= len(name) <= 50:
-                    score += 5
-                elif len(name) > 50:
-                    score -= 2  # Penalize very long names
+                # MAJOR bonus for product descriptors (packaging info)
+                descriptors = ['pack', 'un', 'unidades', 'ml', 'gr', 'kg', 'lt', 'lata', 'botella', 'sachét']
+                for descriptor in descriptors:
+                    if descriptor in name_lower:
+                        score += 12
                 
-                # Bonus for containing size information
-                if any(size_word in name_lower for size_word in ['ml', 'l', 'gr', 'kg', 'cc']):
-                    score += 3
+                # MAJOR bonus for size information in name
+                size_patterns = [r'\d+\s*(ml|gr|kg|lt|cc)', r'\d+\s*un', r'pack\s*\d+']
+                for pattern in size_patterns:
+                    if re.search(pattern, name_lower):
+                        score += 15
                 
-                # Penalty for generic words
-                generic_penalty_words = ['precio', 'oferta', 'descuento', 'stock', 'disponible']
-                for penalty_word in generic_penalty_words:
-                    if penalty_word in name_lower:
-                        score -= 5
+                # Penalty for very generic names
+                generic_terms = ['coca-cola', 'pepsi', 'sprite', 'fanta']  # Just brand names
+                if name_lower in generic_terms:
+                    score -= 15
                 
-                scored_names.append((name, score))
+                # Penalty for navigation/UI elements
+                ui_elements = ['agregar', 'ver', 'más', 'opciones', 'compartir', 'favorito']
+                for element in ui_elements:
+                    if element in name_lower:
+                        score -= 20
+                
+                scored_names.append((score, name))
+                print(f"     📝 Name candidate: '{name}' (score: {score})")
             
-            # Sort by score and return the best name
-            scored_names.sort(key=lambda x: x[1], reverse=True)
-            best_name = scored_names[0][0]
+            # Sort by score (highest first) and return the best name
+            scored_names.sort(key=lambda x: x[0], reverse=True)
             
-            print(f"     📝 Selected name: '{best_name}' (score: {scored_names[0][1]})")
+            if scored_names:
+                best_score, best_name = scored_names[0]
+                print(f"     📝 Selected name: '{best_name}' (score: {best_score})")
+                return best_name
             
-            # Append size information if available and not already in name
-            if size_candidates:
-                name_lower = best_name.lower()
-                for size in size_candidates:
-                    if not any(unit in name_lower for unit in ['ml', 'l', 'gr', 'kg', 'cc']) and \
-                       any(unit in size.lower() for unit in ['ml', 'l', 'gr', 'kg', 'cc']):
-                        best_name = f"{best_name} {size}"
-                        break
-            
-            return best_name
+            return "Unknown Product"
             
         except Exception as e:
-            print(f"     ❌ Error extracting product name: {e}")
+            print(f"Error extracting product name: {e}")
             return "Unknown Product"
     
     def _calculate_price_per_unit(self, price: float, size_candidates: List[str], promotion_info: Dict) -> Dict:
